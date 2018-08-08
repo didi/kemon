@@ -30,4 +30,4 @@ Please use Xcode project or makefile to build the Kemon kext driver
 Welcome to contribute by creating issues or sending pull requests. See Contributing Guide for guidelines.
 
 ## License
-VirtualAPK is licensed under the Apache License 2.0. See the LICENSE file.
+Kemon is licensed under the Apache License 2.0. See the LICENSE file.
