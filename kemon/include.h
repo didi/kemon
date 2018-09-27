@@ -33,7 +33,8 @@ enum os_version
     OS_X_YOSEMITE,
     OS_X_EL_CAPITAN,
     MACOS_SIERRA,
-    MACOS_HIGH_SIERRA
+    MACOS_HIGH_SIERRA,
+    MACOS_MOJAVE
 };
 
 //
@@ -51,6 +52,7 @@ enum message_type
     FILEOP_EXEC,
     FILEOP_DELETE,
     FILEOP_WRITE_OR_APPEND,
+    FILEOP_WILL_RENAME,
     DEVICE_OPEN = 0x20,
     NETWORK_TCP_IPV4_DETACH = 0x40,
     NETWORK_UDP_IPV4_DETACH,
@@ -123,6 +125,11 @@ struct file_operation_monitoring
         {
             char path[MAXPATHLEN];
         } fileop_delete;
+        struct
+        {
+            char from[MAXPATHLEN];
+            char to[MAXPATHLEN];
+        } fileop_will_rename;
         struct
         {
             char path[MAXPATHLEN];

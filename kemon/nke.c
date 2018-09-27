@@ -129,6 +129,8 @@ ctl_connect(
     void **unitinfo
     )
 {
+    int status = -1;
+
     if (OSCompareAndSwap(0, 1, &gctl_connected))
     {
         if (!gctl_connection_ref)
@@ -150,14 +152,12 @@ ctl_connect(
             printf("[%s.kext] : connection=%p, unit=%x, process(pid %d)=%s, parent(ppid %d)=%s.\n",
                    DRIVER_NAME, gctl_connection_ref, gctl_connection_unit, pid, proc_name_pid, ppid, proc_name_ppid);
         #endif
-        }
-        else
-        {
-            return -1;
+
+            status = 0;
         }
     }
 
-    return 0;
+    return status;
 }
 
 //
@@ -228,6 +228,10 @@ get_message_type(
 
     case FILEOP_DELETE:
         result = "FILEOP_DELETE";
+        break;
+
+    case FILEOP_WILL_RENAME:
+        result = "FILEOP_WILL_RENAME";
         break;
 
     case FILEOP_WRITE_OR_APPEND:
@@ -363,6 +367,17 @@ dump_message(
         }
         break;
 
+    case FILEOP_WILL_RENAME:
+        {
+            struct file_operation_monitoring *fileop_message = (struct file_operation_monitoring *) message;
+
+            printf("[%s.kext] : action=KAUTH_FILEOP_WILL_RENAME, uid=%u, process(pid %d)=%s, parent(ppid %d)=%s, from=%s, to=%s.\n",
+                   DRIVER_NAME, fileop_message->header.uid, fileop_message->header.pid, fileop_message->header.proc_name_pid,
+                   fileop_message->header.ppid, fileop_message->header.proc_name_ppid,
+                   fileop_message->body.fileop_will_rename.from, fileop_message->body.fileop_will_rename.to);
+        }
+        break;
+
     case FILEOP_WRITE_OR_APPEND:
         {
             struct file_operation_monitoring *fileop_message = (struct file_operation_monitoring *) message;
@@ -426,7 +441,7 @@ dump_message(
 
             if (tcp_monitoring->in_packets)
             {
-                printf("[%s.kext] : duration=%ld.%6d seconds, <TCP> %s:%d(%02x:%02x:%02x:%02x:%02x:%02x)<->%s:%d(%02x:%02x:%02x:%02x:%02x:%02x), uid=%u, process(pid %d)=%s, parent(ppid %d)=%s, in=%d packets, %d bytes, out=%d packets, %d bytes.\n",
+                printf("[%s.kext] : action=TCP_IPV4_DETACH, duration=%ld.%6d seconds, %s:%d(%02x:%02x:%02x:%02x:%02x:%02x)<->%s:%d(%02x:%02x:%02x:%02x:%02x:%02x), uid=%u, process(pid %d)=%s, parent(ppid %d)=%s, in=%d packets, %d bytes, out=%d packets, %d bytes.\n",
                        DRIVER_NAME, diff.tv_sec, diff.tv_usec,
                        tcp_monitoring->source_address_string, tcp_monitoring->source_port,
                        tcp_monitoring->source_address_ether[0], tcp_monitoring->source_address_ether[1], tcp_monitoring->source_address_ether[2],
@@ -440,7 +455,7 @@ dump_message(
             }
             else
             {
-                printf("[%s.kext] : duration=%ld.%6d seconds, <TCP> %s:%d%s%s:%d, uid=%u, process(pid %d)=%s, parent(ppid %d)=%s, in=%d packets, %d bytes, out=%d packets, %d bytes.\n",
+                printf("[%s.kext] : action=TCP_IPV4_DETACH, duration=%ld.%6d seconds, %s:%d%s%s:%d, uid=%u, process(pid %d)=%s, parent(ppid %d)=%s, in=%d packets, %d bytes, out=%d packets, %d bytes.\n",
                        DRIVER_NAME, diff.tv_sec, diff.tv_usec,
                        tcp_monitoring->source_address_string, tcp_monitoring->source_port,
                        tcp_monitoring->out_packets ? "-->" : "---",
@@ -472,7 +487,7 @@ dump_message(
 
             char *dns_question = (char *) dns_monitoring + sizeof(struct network_dns_monitoring);
 
-            printf("[%s.kext] : <DNS Query> %s:%d-->%s:%d, uid=%u, process(pid %d)=%s, parent(ppid %d)=%s, query=%s.\n",
+            printf("[%s.kext] : action=UDP_DNS_QUERY, %s:%d-->%s:%d, uid=%u, process(pid %d)=%s, parent(ppid %d)=%s, query=%s.\n",
                    DRIVER_NAME, dns_monitoring->source_address_string, dns_monitoring->source_port,
                    dns_monitoring->destination_address_string, dns_monitoring->destination_port,
                    dns_monitoring->header.uid, dns_monitoring->header.pid, dns_monitoring->header.proc_name_pid,
@@ -507,6 +522,7 @@ send_message_internal(
     case FILEOP_EXCHANGE:
     case FILEOP_LINK:
     case FILEOP_DELETE:
+    case FILEOP_WILL_RENAME:
     case FILEOP_WRITE_OR_APPEND:
     case DEVICE_OPEN:
         {
@@ -586,6 +602,8 @@ insert_message(
     else
     {
         OSFree(entry, entry->entry_size, gmalloc_tag);
+
+        OSIncrementAtomic(&gevent_lost);
     }
 }
 
@@ -607,7 +625,7 @@ send_message(
     switch (message->type)
     {
     //
-    // We don't care about the FILEOP_OPEN, FILEOP_CLOSE and DEVICE_OPEN in this version
+    // We don't care about the FILEOP_OPEN, FILEOP_CLOSE, DEVICE_OPEN and FILEOP_WILL_RENAME in this version
     //
 
 //  case FILEOP_OPEN:
@@ -617,6 +635,7 @@ send_message(
     case FILEOP_EXCHANGE:
     case FILEOP_LINK:
     case FILEOP_DELETE:
+//  case FILEOP_WILL_RENAME:
     case FILEOP_WRITE_OR_APPEND:
 //  case DEVICE_OPEN:
         {
@@ -830,9 +849,9 @@ nke_kernel_thread(
                     // ctl_enqueuedata failed!
                     //
 
-                    entry->retry += 1;
-
                     lck_mtx_lock(gnke_event_log_lock);
+
+                    entry->retry += 1;
 
                     TAILQ_INSERT_HEAD(&gnke_event_list, entry, next);
 
@@ -852,7 +871,7 @@ nke_kernel_thread(
 
                 #if FRAMEWORK_TROUBLESHOOTING
                     if (entry->retry)
-                        printf("[%s.kext] : message type=%s, retry number=%d.\n", DRIVER_NAME, get_message_type(message->type), entry->retry);
+                        printf("[%s.kext] : message type=%s, retried=%d.\n", DRIVER_NAME, get_message_type(message->type), entry->retry);
                     else
                         printf("[%s.kext] : message type=%s.\n", DRIVER_NAME, get_message_type(message->type));
                 #endif
@@ -887,7 +906,7 @@ static struct kern_ctl_reg gctl_reg =
     0,                   // If set to zero, the default send size will be used
     0,                   // If set to zero, the default receive size will be used
     ctl_connect,         // Specify the function to be called whenever a client connects to the kernel control
-    ctl_disconnect,      // Specify a function to be called whenever a client disconnects from the kernel control
+    ctl_disconnect,      // Specify the function to be called whenever a client disconnects from the kernel control
     NULL,                // Handles data sent from the client to kernel control
     ctl_setopt,          // Called when the user process makes the setsockopt call
     ctl_getopt           // Called when the user process makes the getsockopt call
@@ -988,7 +1007,7 @@ nke_initialization(
             // For EBUSY error
             //
 
-            int retry = 5;
+            int retry = 3;
 
             do
             {
@@ -1007,8 +1026,8 @@ nke_initialization(
                     kern_return = KERN_FAILURE;
 
                 #if FRAMEWORK_TROUBLESHOOTING
-                    printf("[%s.kext] : Error! ctl_register(false) failed, status=%d, retry=%d (lost=%d, events=%d).\n",
-                           DRIVER_NAME, status, retry, gevent_lost, genqueued_event);
+                    printf("[%s.kext] : Error! ctl_register(false) failed, status=%d, retry=%d (events=%d, lost events=%d).\n",
+                           DRIVER_NAME, status, retry, genqueued_event, gevent_lost);
                 #endif
 
                     retry--;

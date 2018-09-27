@@ -25,7 +25,7 @@ Revision History:
 
 #define NKE_BUNDLE_ID "com.assuresec.kemon.nke"
 
-#define ENQUEUED_EVENT_LIMIT 0x18000
+#define ENQUEUED_EVENT_LIMIT 0x10086
 
 static thread_t gnew_kernel_thread = THREAD_NULL;
 

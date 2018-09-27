@@ -483,6 +483,10 @@ get_module_info(
     {
         kmod_info_t *kmod_item = gkmod_item;
 
+        //
+        // Direct Kernel Object Manipulation (DKOM) is not a good idea
+        //
+
         do
         {
             if ((vm_address_t) handler_address > kmod_item->address &&
@@ -528,8 +532,31 @@ get_handler_info(
         }
         else
         {
-            printf("[%s.kext] :       handler address: %p, policy name: %s.\n",
-                   DRIVER_NAME, handler_address, handler_name);
+            lck_mtx_lock(goskext_handler_lock);
+
+            if (gkext_base && gkext_size && gkext_name)
+            {
+                if ((vm_address_t) handler_address > gkext_base &&
+                    (vm_address_t) handler_address < gkext_base + gkext_size)
+                {
+                    vm_address_t delta = (vm_address_t) handler_address - gkext_base;
+
+                    printf("[%s.kext] :       handler address: %p, module offset: %s+0x%lX, policy name: %s.\n",
+                           DRIVER_NAME, handler_address, gkext_name, delta, handler_name);
+                }
+                else
+                {
+                    printf("[%s.kext] :       handler address: %p, policy name: %s.\n",
+                           DRIVER_NAME, handler_address, handler_name);
+                }
+            }
+            else
+            {
+                printf("[%s.kext] :       handler address: %p, policy name: %s.\n",
+                       DRIVER_NAME, handler_address, handler_name);
+            }
+
+            lck_mtx_unlock(goskext_handler_lock);
         }
     }
 }

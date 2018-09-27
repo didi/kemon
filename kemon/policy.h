@@ -603,11 +603,19 @@ mac_policy_unregister(
 // Declaration
 //
 
-extern kmod_info_t *gkmod_item;
-
 extern OSMallocTag gmalloc_tag;
 
 extern lck_mtx_t *gmac_policy_lock;
+
+extern lck_mtx_t *goskext_handler_lock;
+
+extern kmod_info_t *gkmod_item;
+
+extern vm_address_t gkext_base;
+
+extern vm_size_t gkext_size;
+
+extern char *gkext_name;
 
 extern
 int

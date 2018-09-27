@@ -41,9 +41,21 @@ unsigned char *goskext_call_func = NULL;
 // Call hook mode
 //
 
-boolean_t goskext_call_func_6_bytes = FALSE;
+boolean_t goskext_call_func_2_bytes = FALSE;
 
-boolean_t goskext_call_func_7_bytes = FALSE;
+boolean_t goskext_call_func_3_bytes = FALSE;
+
+//
+// OSKext::start() handler mutex lock
+//
+
+lck_mtx_t *goskext_handler_lock = NULL;
+
+vm_address_t gkext_base = 0;
+
+vm_size_t gkext_size = 0;
+
+char *gkext_name = NULL;
 
 //
 // Enable the write protection bit in CR0 register
@@ -182,8 +194,8 @@ mac_policy_register_prologue_handler(
     if (mpc)
     {
     #if MAC_TROUBLESHOOTING
-        printf("[%s.kext] : In mac_policy_register callback handler. %s\n",
-               DRIVER_NAME, MAC_POLICY_REGISTER_INJECTION ? "Blocking!" : "");
+        printf("[%s.kext] : In the mac_policy_register callback handler. %s\n",
+               DRIVER_NAME, MAC_POLICY_REGISTER_INJECTION ? "<Blocking!>" : "");
         printf("[%s.kext] : macOS MAC policy=%s(%s), load time flags=%d(%s), policy mpc=%p, policy ops=%p.\n",
                DRIVER_NAME, mpc->mpc_name, mpc->mpc_fullname,
                mpc->mpc_loadtime_flags, get_load_time_option_name(mpc->mpc_loadtime_flags), mpc, mpc->mpc_ops);
@@ -233,7 +245,7 @@ unhook_mac_policy_register_prologue(
 
     mac_policy_register_inline_hooked = FALSE;
 
-    size_of_mac_policy_register_original = 0;
+    mac_policy_register_original_size = 0;
 }
 
 static
@@ -278,7 +290,7 @@ inline_hook_mac_policy_register(
 {
     kern_return_t status = KERN_FAILURE;
 
-    if (flag && !size_of_mac_policy_register_original && !mac_policy_register_inline_hooked)
+    if (flag && !mac_policy_register_original_size && !mac_policy_register_inline_hooked)
     {
         //
         // Holds the result of the decoding
@@ -348,9 +360,9 @@ inline_hook_mac_policy_register(
 
                 if ((sizeof(mac_policy_register_inline)) <= total && SIZE_OF_MAC_POLICY_REGISTER_TRAMPOLINE > total)
                 {
-                    size_of_mac_policy_register_original = total;
+                    mac_policy_register_original_size = total;
 
-                    inline_hook_mac_policy_register_prologue(mac_policy_register, size_of_mac_policy_register_original);
+                    inline_hook_mac_policy_register_prologue(mac_policy_register, mac_policy_register_original_size);
 
                     decoded_instructions_count = 0;
 
@@ -378,9 +390,9 @@ inline_hook_mac_policy_register(
             buffer += next; length -= next; offset += next;
         }
     }
-    else if (!flag && size_of_mac_policy_register_original && mac_policy_register_inline_hooked)
+    else if (!flag && mac_policy_register_original_size && mac_policy_register_inline_hooked)
     {
-        unhook_mac_policy_register_prologue(mac_policy_register, size_of_mac_policy_register_original);
+        unhook_mac_policy_register_prologue(mac_policy_register, mac_policy_register_original_size);
 
         status = KERN_SUCCESS;
     }
@@ -662,11 +674,18 @@ oskext_call_post_handler(
         send_message((struct message_header *) message);
     }
 
-    printf("[%s.kext] : In kext post callback handler. status=%d, name=%s, version=%s, module base=0x%lx, module size=0x%lx.\n",
+    printf("[%s.kext] : In the kext post callback handler. status=%d, name=%s, version=%s, module base=0x%lx, module size=0x%lx.\n",
            DRIVER_NAME, status, info->name, info->version, info->address, info->size);
 
     if (message)
         OSFree(message, (uint32_t) sizeof(struct kernel_module_monitoring), gmalloc_tag);
+
+    lck_mtx_lock(goskext_handler_lock);
+
+    gkext_base = gkext_size = 0;
+    gkext_name = NULL;
+
+    lck_mtx_unlock(goskext_handler_lock);
 
     //
     // Subvert the return value if needed
@@ -700,13 +719,21 @@ oskext_call_pre_handler(
 
         enable_interrupts();
 
-        printf("[%s.kext] : In kext pre callback handler. Patching the driver entry point! name=%s, version=%s, module base=0x%lx, module size=0x%lx.\n",
+        printf("[%s.kext] : In the kext pre callback handler. Patching the driver entry point! name=%s, version=%s, module base=0x%lx, module size=0x%lx.\n",
                DRIVER_NAME, info->name, info->version, info->address, info->size);
     }
     else
     {
-        printf("[%s.kext] : In kext pre callback handler. name=%s, version=%s, module base=0x%lx, module size=0x%lx.\n",
+        printf("[%s.kext] : In the kext pre callback handler. name=%s, version=%s, module base=0x%lx, module size=0x%lx.\n",
                DRIVER_NAME, info->name, info->version, info->address, info->size);
+
+        lck_mtx_lock(goskext_handler_lock);
+
+        gkext_base = info->address;
+        gkext_size = info->size;
+        gkext_name = info->name;
+
+        lck_mtx_unlock(goskext_handler_lock);
     }
 }
 
@@ -735,7 +762,7 @@ unhook_oskext_call(
 
     oskext_call_inline_hooked = FALSE;
 
-    size_of_oskext_call_original = 0;
+    oskext_call_original_size = 0;
 }
 
 static
@@ -789,6 +816,7 @@ oskext_start_prologue_handler(
     struct osstring_el_capitan *path_el_capitan = NULL;
     struct osstring_macos_sierra *path_macos_sierra = NULL;
     struct osstring_macos_high_sierra *path_macos_high_sierra = NULL;
+    struct osstring_macos_mojave *path_macos_mojave = NULL;
 
     if (kext)
     {
@@ -798,10 +826,13 @@ oskext_start_prologue_handler(
             path_macos_sierra = (struct osstring_macos_sierra *) kext->path;
         else if (MACOS_HIGH_SIERRA == gmacOS_major)
             path_macos_high_sierra = (struct osstring_macos_high_sierra *) kext->path;
+        else if (MACOS_MOJAVE == gmacOS_major)
+            path_macos_mojave = (struct osstring_macos_mojave *) kext->path;
 
         info = kext->kmod_info;
 
-        if ((path_el_capitan || path_macos_sierra || path_macos_high_sierra) && info)
+        if ((path_el_capitan || path_macos_sierra ||
+            path_macos_high_sierra || path_macos_mojave) && info)
         {
             size_t data_length = 0;
 
@@ -856,6 +887,12 @@ oskext_start_prologue_handler(
                     memcpy(message->module_path, path_macos_high_sierra->string,
                            (data_length <= MAXPATHLEN - 1) ? data_length : MAXPATHLEN - 1);
                 }
+                else if (MACOS_MOJAVE == gmacOS_major && path_macos_mojave)
+                {
+                    data_length = strlen((const char *) path_macos_mojave->string);
+                    memcpy(message->module_path, path_macos_mojave->string,
+                           (data_length <= MAXPATHLEN - 1) ? data_length : MAXPATHLEN - 1);
+                }
 
                 data_length = strlen((const char *) info->version);
                 memcpy(message->module_version, info->version,
@@ -868,6 +905,14 @@ oskext_start_prologue_handler(
         {
             return;
         }
+    }
+    else
+    {
+        //
+        // EINVAL
+        //
+
+        return;
     }
 
     //
@@ -906,8 +951,21 @@ oskext_start_prologue_handler(
 
         unsigned char *buffer = 0;
 
-        if (goskext_call_func_7_bytes) buffer = goskext_call_func - 3;
-        else if (goskext_call_func_6_bytes) buffer = goskext_call_func - 2;
+        if (goskext_call_func_3_bytes)
+        {
+            buffer = goskext_call_func - 3;
+        }
+        else if (goskext_call_func_2_bytes)
+        {
+            buffer = goskext_call_func - 2;
+        }
+        else
+        {
+            if (message)
+                OSFree(message, (uint32_t) sizeof(struct kernel_module_monitoring), gmalloc_tag);
+
+            return;
+        }
 
         //
         // Default offset for buffer is 0
@@ -951,14 +1009,14 @@ oskext_start_prologue_handler(
 
                 if (sizeof(oskext_call_inline) <= total)
                 {
-                    size_of_oskext_call_original = total;
+                    oskext_call_original_size = total;
 
-                    if (size_of_oskext_start_original && oskext_start_inline_hooked)
+                    if (oskext_start_original_size && oskext_start_inline_hooked)
                     {
-                        if (goskext_call_func_7_bytes)
-                            inline_hook_oskext_call((void *) (goskext_call_func - 3), size_of_oskext_call_original);
-                        else if (goskext_call_func_6_bytes)
-                            inline_hook_oskext_call((void *) (goskext_call_func - 2), size_of_oskext_call_original);
+                        if (goskext_call_func_3_bytes)
+                            inline_hook_oskext_call((void *) (goskext_call_func - 3), oskext_call_original_size);
+                        else if (goskext_call_func_2_bytes)
+                            inline_hook_oskext_call((void *) (goskext_call_func - 2), oskext_call_original_size);
                     }
 
                     decoded_instructions_count = 0; break;
@@ -1015,7 +1073,7 @@ unhook_oskext_start_prologue(
 
     oskext_start_inline_hooked = FALSE;
 
-    size_of_oskext_start_original = 0;
+    oskext_start_original_size = 0;
 }
 
 static
@@ -1046,19 +1104,19 @@ inline_hook_oskext_start_prologue(
     memcpy(target, oskext_start_inline, sizeof(oskext_start_inline));
 
     //
-    // Dig a 8 bytes hole for call hook
+    // Dig an eight-byte hole for call hook
     //
 
     *(uint64_t *) ((char *) target + sizeof(oskext_start_inline)) = (uint64_t) oskext_call_trampoline;
 
     //
-    // Calculate the offset
+    // Calculate offset
     //
 
-    if (goskext_call_func_7_bytes)
+    if (goskext_call_func_3_bytes)
         *(unsigned int *) (oskext_call_inline + 2) =
          (unsigned int) (0 - (goskext_call_func + 3 - (goskext_start + sizeof(oskext_start_inline))));
-    else if (goskext_call_func_6_bytes)
+    else if (goskext_call_func_2_bytes)
         *(unsigned int *) (oskext_call_inline + 2) =
          (unsigned int) (0 - (goskext_call_func + 4 - (goskext_start + sizeof(oskext_start_inline))));
 
@@ -1078,9 +1136,9 @@ inline_hook_oskext_start(
     kern_return_t status = KERN_FAILURE;
 
     if (flag && goskext_start && goskext_call_func &&
-        !size_of_oskext_start_original && !oskext_start_inline_hooked &&
-        !size_of_oskext_call_original && !oskext_call_inline_hooked &&
-        (goskext_call_func_6_bytes || goskext_call_func_7_bytes))
+        !oskext_start_original_size && !oskext_start_inline_hooked &&
+        !oskext_call_original_size && !oskext_call_inline_hooked &&
+        (goskext_call_func_2_bytes || goskext_call_func_3_bytes))
     {
         //
         // Holds the result of the decoding
@@ -1150,9 +1208,9 @@ inline_hook_oskext_start(
 
                 if ((sizeof(oskext_start_inline) + sizeof(void *)) <= total && SIZE_OF_OSKEXT_START_TRAMPOLINE > total)
                 {
-                    size_of_oskext_start_original = total;
+                    oskext_start_original_size = total;
 
-                    inline_hook_oskext_start_prologue(goskext_start, size_of_oskext_start_original);
+                    inline_hook_oskext_start_prologue(goskext_start, oskext_start_original_size);
 
                     decoded_instructions_count = 0;
 
@@ -1181,16 +1239,16 @@ inline_hook_oskext_start(
         }
     }
     else if (!flag && goskext_start && goskext_call_func &&
-             size_of_oskext_start_original && oskext_start_inline_hooked)
+             oskext_start_original_size && oskext_start_inline_hooked)
     {
-        unhook_oskext_start_prologue(goskext_start, size_of_oskext_start_original);
+        unhook_oskext_start_prologue(goskext_start, oskext_start_original_size);
 
-        if (size_of_oskext_call_original && oskext_call_inline_hooked)
+        if (oskext_call_original_size && oskext_call_inline_hooked)
         {
-            if (goskext_call_func_7_bytes)
-                unhook_oskext_call((void *) (goskext_call_func - 3), size_of_oskext_call_original);
-            else if (goskext_call_func_6_bytes)
-                unhook_oskext_call((void *) (goskext_call_func - 2), size_of_oskext_call_original);
+            if (goskext_call_func_3_bytes)
+                unhook_oskext_call((void *) (goskext_call_func - 3), oskext_call_original_size);
+            else if (goskext_call_func_2_bytes)
+                unhook_oskext_call((void *) (goskext_call_func - 2), oskext_call_original_size);
         }
 
         status = KERN_SUCCESS;
@@ -1210,7 +1268,7 @@ inline_initialization(
     //
     // 1. OSKext::start()
     //
-    // TODO: Use the KeSetAffinityThread + KeGetCurrentProcessorNumber + KeSetTargetProcessorDpc + KeInsertQueueDpc method
+    // TODO: Use the KeSetAffinityThread + KeGetCurrentProcessorNumber + KeSetTargetProcessorDpc + KeInsertQueueDpc or similar method
     //
 
     status = inline_hook_oskext_start(flag);
@@ -1227,7 +1285,7 @@ inline_initialization(
     //
     // 2. mac_policy_register()
     //
-    // TODO: Use the KeSetAffinityThread + KeGetCurrentProcessorNumber + KeSetTargetProcessorDpc + KeInsertQueueDpc method
+    // TODO: Use the KeSetAffinityThread + KeGetCurrentProcessorNumber + KeSetTargetProcessorDpc + KeInsertQueueDpc or similar method
     //
 
     status = inline_hook_mac_policy_register(flag);

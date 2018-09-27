@@ -96,6 +96,14 @@ static SInt32 gactivation_count = 0;
 #endif
 
 //
+// For macOS 10.14 Mojave
+//
+
+#ifndef KAUTH_FILEOP_WILL_RENAME
+#   define KAUTH_FILEOP_WILL_RENAME 8
+#endif
+
+//
 // vnode_action_info describes one of the action bits in the vnode scope's action field
 //
 

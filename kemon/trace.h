@@ -28,6 +28,7 @@ Revision History:
 enum driver_version
 {
     ALPHA_VERSION_08_FEB_2017 = 0x01000001,
+    ALPHA_VERSION_25_SEP_2018 = 0x01000002,
     RELEASE_VERSION
 };
 

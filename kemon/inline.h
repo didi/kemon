@@ -38,9 +38,13 @@ static uint64_t jmp_to_mac_policy_register_prologue_handler = 0;
 
 static uint64_t jmp_back_to_mac_policy_register = 0;
 
-static uint32_t  size_of_mac_policy_register_original = 0;
+static uint32_t mac_policy_register_original_size = 0;
 
 static boolean_t mac_policy_register_inline_hooked = FALSE;
+
+//
+// Returns EEXIST
+//
 
 #define MAC_POLICY_REGISTER_INJECTION TRUE
 
@@ -68,7 +72,7 @@ static uint64_t jmp_to_oskext_start_prologue_handler = 0;
 
 static uint64_t jmp_back_to_oskext_start = 0;
 
-static uint32_t size_of_oskext_start_original = 0;
+static uint32_t oskext_start_original_size = 0;
 
 static boolean_t oskext_start_inline_hooked = FALSE;
 
@@ -91,7 +95,7 @@ static uint64_t jmp_to_oskext_call_post_handler = 0;
 
 static uint64_t jmp_back_to_oskext_call = 0;
 
-static uint32_t size_of_oskext_call_original = 0;
+static uint32_t oskext_call_original_size = 0;
 
 static boolean_t oskext_call_inline_hooked = FALSE;
 
@@ -144,6 +148,15 @@ struct osstring_macos_high_sierra
     unsigned int length;
 };
 
+struct osstring_macos_mojave
+{
+    void *osobject;
+    unsigned long retain_count;
+    char *string;
+    unsigned int flags;
+    unsigned int length;
+};
+
 struct oskext
 {
     void *osobject;
@@ -184,9 +197,9 @@ extern unsigned char *goskext_call_func;
 // Call hook mode
 //
 
-extern boolean_t goskext_call_func_6_bytes;
+extern boolean_t goskext_call_func_2_bytes;
 
-extern boolean_t goskext_call_func_7_bytes;
+extern boolean_t goskext_call_func_3_bytes;
 
 //
 // Declaration
@@ -195,6 +208,8 @@ extern boolean_t goskext_call_func_7_bytes;
 extern int gmacOS_major;
 
 extern OSMallocTag gmalloc_tag;
+
+extern lck_mtx_t *goskext_handler_lock;
 
 #if MAC_TROUBLESHOOTING
 extern

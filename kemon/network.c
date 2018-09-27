@@ -83,7 +83,7 @@ sflt_unregistered(
 }
 
 //
-// sflt_attach_func_locked is called by sflt_attach_func initialize internal memory structures.
+// sflt_attach_func_locked is called by sflt_attach_func to initialize internal memory structures.
 // Assumption that the fine grain lock associated with the glist_active queue is held
 // so that the queue entry can be inserted atomically.
 //
@@ -247,7 +247,7 @@ sflt_attach_udp_ipv4(
 }
 
 //
-// Remove item from the glist_inactive list.
+// Removes the target item from the glist_inactive list.
 //
 
 static
@@ -324,7 +324,7 @@ sflt_remove_all(
 }
 
 //
-// Used to send information to the registered clients iterates through all log_entries in the glist_inactive queue.
+// Used to send information to the registered client iterates through all log_entries in the glist_inactive queue.
 //
 
 static
@@ -478,7 +478,7 @@ sflt_detach_ipv4(
     else if (AF_INET == entry->protocol && udp_attached)
     {
         //
-        // We don't care about udp traffic in this version
+        // We don't care about udp detach traffic in this version
         //
     }
 
@@ -718,7 +718,7 @@ sflt_data_in(
     mbuf_t packet = *data;
     size_t bytes = mbuf_pkthdr_len(*data);
     OSIncrementAtomic(&(entry->info.in_packets));
-    OSAddAtomic((SInt32) bytes, &(entry->info.in_bytes)); // Overflow?
+    OSAddAtomic((SInt32) bytes, &(entry->info.in_bytes)); // Integer overflow?
 
     //
     // Parse the first inbound packet
@@ -1004,7 +1004,7 @@ sflt_data_out(
     mbuf_t packet = *data;
     size_t bytes = mbuf_pkthdr_len(*data);
     OSIncrementAtomic(&(entry->info.out_packets));
-    OSAddAtomic((SInt32) bytes, &(entry->info.out_bytes)); // Overflow?
+    OSAddAtomic((SInt32) bytes, &(entry->info.out_bytes)); // Integer overflow?
 
     //
     // Parse the first outbound packet

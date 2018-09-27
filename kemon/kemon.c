@@ -272,8 +272,7 @@ listener_scope_generic(
 
     case KAUTH_GENERIC_ISSUSER:
     #if KAUTH_TROUBLESHOOTING
-        printf("[%s.kext] : action=KAUTH_GENERIC_ISSUSER, uid=%ld, process(pid %d)=%s, parent(ppid %d)=%s, \
-               arg0=0x%lx, arg1=0x%lx, arg2=0x%lx, arg3=0x%lx.\n",
+        printf("[%s.kext] : action=KAUTH_GENERIC_ISSUSER, uid=%ld, process(pid %d)=%s, parent(ppid %d)=%s, arg0=0x%lx, arg1=0x%lx, arg2=0x%lx, arg3=0x%lx.\n",
                DRIVER_NAME, (long) kauth_cred_getuid(credential), pid, proc_name_pid, ppid, proc_name_ppid,
                (long) arg0, (long) arg1, (long) arg2, (long) arg3);
     #endif
@@ -631,6 +630,38 @@ check_vn_open_auth(
 
                 if (0x04 == decoded_instructions[index].size &&
                     0 == strncmp("4c8975", (char *) decoded_instructions[index].instructionHex.p, 6))
+                {
+                    rbp_offset = *((unsigned char *) decoded_instructions[index].offset + 0x03);
+
+                    if (rbp_offset & 0x80)
+                    {
+                        if (!grbp_offset) grbp_offset = (0x0 - rbp_offset) & 0xff;
+
+                        if (!gfmode_in_rbp) gfmode_in_rbp = TRUE;
+                    }
+                    else
+                    {
+                        //
+                        // Impossible
+                        //
+
+                        grbp_offset = 0;
+
+                        gfmode_in_rbp = FALSE; gunknown_platform_fileop_open = TRUE;
+                    }
+
+                    decoded_instructions_count = 0; break;
+                }
+            }
+
+            if (fmode_in_r12)
+            {
+                //
+                // 0xffffff800c160ccf <+63>: 4c 89 65 a8   movq   %r12, -0x58(%rbp)
+                //
+
+                if (0x04 == decoded_instructions[index].size &&
+                    0 == strncmp("4c8965", (char *) decoded_instructions[index].instructionHex.p, 6))
                 {
                     rbp_offset = *((unsigned char *) decoded_instructions[index].offset + 0x03);
 
@@ -1164,7 +1195,7 @@ listener_scope_fileop(
             //     ..................
             //
 
-            // CASE 1.
+            // CASE 1:
 
             //
             // (lldb) di -b -n vn_open_auth
@@ -1184,7 +1215,7 @@ listener_scope_fileop(
 
             // -----------------------------------------------------------------------------------------
 
-            // CASE 2.
+            // CASE 2:
 
             //
             // (lldb) di -b -n vn_open_auth
@@ -1397,14 +1428,14 @@ listener_scope_fileop(
 
     //
     // 1. For Mach-O executables, this is the actual executable
-    // 2. FOR CFM applications, this will always reference LaunchCFMApp
+    // 2. For CFM applications, this will always reference LaunchCFMApp
     // 3. For interpreted scripts, such as shell or perl scripts, this is the script, not the interpreter
     //
 
     case KAUTH_FILEOP_EXEC:
         if (!gprefix || (arg1 && gprefix && strprefix((const char *) arg1, gprefix)))
         {
-            // CASE 1.
+            // CASE 1:
 
             //
             // __mac_execve() -> exec_activate_image(struct image_params *imgp)
@@ -1453,7 +1484,7 @@ listener_scope_fileop(
 
             // -----------------------------------------------------------------------------------------
 
-            // CASE 2.
+            // CASE 2:
 
             //
             // __mac_execve() -> exec_activate_image(struct image_params *imgp)
@@ -1715,8 +1746,16 @@ listener_scope_fileop(
 
                                 send_message((struct message_header *) message);
                             }
+                            else
+                            {
+                                goto SKIP_COMMAND_LINE;
+                            }
 
                             OSFree(command_line, (uint32_t) total_argv + 1, gmalloc_tag);
+                        }
+                        else
+                        {
+                            goto SKIP_COMMAND_LINE;
                         }
                     }
                 }
@@ -1754,6 +1793,28 @@ listener_scope_fileop(
         }
         break;
 
+    //
+    // vn_authorize_renamex_with_paths() -> kauth_authorize_fileop(..., KAUTH_FILEOP_WILL_RENAME, ...)
+    //
+
+    case KAUTH_FILEOP_WILL_RENAME:
+        if (!gprefix ||
+            (arg1 && gprefix && strprefix((const char *) arg1, gprefix)) ||
+            (arg2 && gprefix && strprefix((const char *) arg2, gprefix)))
+        {
+            message->header.type = FILEOP_WILL_RENAME;
+
+            data_length = strlen((const char *) arg1);
+            memcpy(message->body.fileop_will_rename.from, (const char *) arg1,
+                   (data_length <= MAXPATHLEN - 1) ? data_length : MAXPATHLEN - 1);
+            data_length = strlen((const char *) arg2);
+            memcpy(message->body.fileop_will_rename.to, (const char *) arg2,
+                   (data_length <= MAXPATHLEN - 1) ? data_length : MAXPATHLEN - 1);
+
+            send_message((struct message_header *) message);
+        }
+        break;
+
     default:
     #if KAUTH_TROUBLESHOOTING
         printf("[%s.kext] : Unknown action! scope=KAUTH_SCOPE_FILEOP, action=%d.\n", DRIVER_NAME, action);
@@ -1776,7 +1837,7 @@ listener_scope_fileop(
 }
 
 //
-// A Kauth listener that's called to authorize an action in any scope that we don't recognise.
+// A Kauth listener that's called to authorize an action in any scope that we don't recognize.
 // In this case, we just dump out the parameters to the operation and return KAUTH_RESULT_DEFER,
 // allowing the other listeners to decide whether the operation is allowed or not.
 //
@@ -1812,8 +1873,7 @@ listener_scope_unknown(
     //
 
 #if KAUTH_TROUBLESHOOTING
-    printf("[%s.kext] : scope=%s, action=%d, uid=%ld, process(pid %d)=%s, parent(ppid %d)=%s, \
-           arg0=0x%lx, arg1=0x%lx, arg2=0x%lx, arg3=0x%lx.\n",
+    printf("[%s.kext] : scope=%s, action=%d, uid=%ld, process(pid %d)=%s, parent(ppid %d)=%s, arg0=0x%lx, arg1=0x%lx, arg2=0x%lx, arg3=0x%lx.\n",
            DRIVER_NAME, glistener_scope, action, (long) kauth_cred_getuid(credential),
            pid, proc_name_pid, ppid, proc_name_ppid, (long) arg0, (long) arg1, (long) arg2, (long) arg3);
 #endif
@@ -1847,7 +1907,7 @@ remove_listener(
         glistener = NULL;
 
         //
-        // Then wait for any threads within out listener to stop
+        // Then wait for any threads within our listener to stop
         //
         // Note that there is still a race condition here!
         // There could still be a thread executing between the OSDecrementAtomic and the return from the listener function
@@ -1970,7 +2030,7 @@ install_listener(
 #endif
 
     //
-    // In the event of any failure, call RemoveListener which will do all the right cleanup
+    // In the event of any failure, call remove_listener which will do all the right cleanup
     //
 
     if (!glistener_scope || !glistener)
@@ -2196,7 +2256,7 @@ kemon_initialization(
         if (KERN_SUCCESS != status)
         {
         #if FRAMEWORK_TROUBLESHOOTING
-            printf("[%s.kext] : Error! inline_initialization(TRUE) failed, status=%d.\n", DRIVER_NAME, status);
+            printf("[%s.kext] : Error! inline_initialization(true) failed, status=%d.\n", DRIVER_NAME, status);
         #endif
 
             return status;
@@ -2364,6 +2424,11 @@ check_os_version(
 
         status = TRUE; break;
 
+    case MACOS_MOJAVE:
+        printf("[%s.kext] : kernel version=%d.%d - macOS Mojave, %s.\n", DRIVER_NAME, *major, *minor, string);
+
+        status = TRUE; break;
+
     default:
         printf("[%s.kext] : kernel version=%d.%d - Unknown version! %s.\n", DRIVER_NAME, *major, *minor, string);
 
@@ -2440,7 +2505,7 @@ kemon_start(
             0xc389 == *(unsigned short *) (goskext_call_func - 2 + sizeof(int16_t) * 1) &&
             0xdb85 == *(unsigned short *) (goskext_call_func - 2 + sizeof(int16_t) * 2))
         {
-            goskext_call_func_6_bytes = TRUE;
+            goskext_call_func_2_bytes = TRUE;
         }
 
         //
@@ -2456,7 +2521,22 @@ kemon_start(
                  0xc389 == *(unsigned short *) (goskext_call_func + sizeof(int16_t) * 0) &&
                  0xdb85 == *(unsigned short *) (goskext_call_func + sizeof(int16_t) * 1))
         {
-            goskext_call_func_7_bytes = TRUE;
+            goskext_call_func_3_bytes = TRUE;
+        }
+
+        //
+        // 3. kernel.development`OSKext::start:
+        //    ..................
+        //    0xffffff800c575fc4 <+548>: ff 55 c8    callq  *-0x38(%rbp)
+        //    0xffffff800c575fc7 <+551>: 41 89 c6    movl   %eax, %r14d
+        //    ..................
+        //
+
+        else if (0x55ff == *(unsigned short *) (goskext_call_func - 3) &&
+                 0x8941 == *(unsigned short *) (goskext_call_func + sizeof(int16_t) * 0) &&
+                 0x8 > (*(unsigned char *) (goskext_call_func + sizeof(int16_t) * 1) - 0xc0))
+        {
+            goskext_call_func_3_bytes = TRUE;
         }
 
         //
@@ -2494,14 +2574,13 @@ kemon_start(
     if (KERN_SUCCESS == status)
     {
         gmac_policy_lock = lck_mtx_alloc_init(glock_group, LCK_ATTR_NULL);
-
         gnke_event_log_lock = lck_mtx_alloc_init(glock_group, LCK_ATTR_NULL);
-
+        goskext_handler_lock = lck_mtx_alloc_init(glock_group, LCK_ATTR_NULL);
         gnetwork_filter_lock = lck_mtx_alloc_init(glock_group, LCK_ATTR_NULL);
-
         gkauth_configuration_lock = lck_mtx_alloc_init(glock_group, LCK_ATTR_NULL);
 
-        if (gmac_policy_lock && gnke_event_log_lock && gnetwork_filter_lock && gkauth_configuration_lock)
+        if (gmac_policy_lock && gnke_event_log_lock &&
+            goskext_handler_lock && gnetwork_filter_lock && gkauth_configuration_lock)
         {
         #if KAUTH_DEFAULT_SETTING
             lck_mtx_lock(gkauth_configuration_lock);
@@ -2583,6 +2662,20 @@ kemon_stop(
             lck_mtx_free(gnetwork_filter_lock, glock_group);
 
             gnetwork_filter_lock = NULL;
+        }
+    }
+
+    //
+    // Cleanup the OSKext::start() handler lock
+    //
+
+    if (goskext_handler_lock)
+    {
+        if (glock_group)
+        {
+            lck_mtx_free(goskext_handler_lock, glock_group);
+
+            goskext_handler_lock = NULL;
         }
     }
 
