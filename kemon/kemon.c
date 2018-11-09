@@ -2495,13 +2495,14 @@ kemon_start(
         //
         // 1. kernel.development`OSKext::start:
         //    ..................
-        //    0xffffff80093c2b14 <+1108>: ff d3   callq   *%rbx
+        //    0xffffff80093c2b14 <+1108>: ff d3   callq   *%rbx   /   ff d1   callq   *%rcx
         //    0xffffff80093c2b16 <+1110>: 89 c3   movl    %eax, %ebx
         //    0xffffff80093c2b18 <+1112>: 85 db   testl   %ebx, %ebx
         //    ..................
         //
 
-        if (0xd3ff == *(unsigned short *) (goskext_call_func - 2 + sizeof(int16_t) * 0) &&
+        if (0xff == *(goskext_call_func - 2) &&
+            0xd0 <= *(goskext_call_func - 1) && 0xd7 >= *(goskext_call_func - 1) &&
             0xc389 == *(unsigned short *) (goskext_call_func - 2 + sizeof(int16_t) * 1) &&
             0xdb85 == *(unsigned short *) (goskext_call_func - 2 + sizeof(int16_t) * 2))
         {
@@ -2533,8 +2534,8 @@ kemon_start(
         //
 
         else if (0x55ff == *(unsigned short *) (goskext_call_func - 3) &&
-                 0x8941 == *(unsigned short *) (goskext_call_func + sizeof(int16_t) * 0) &&
-                 0x8 > (*(unsigned char *) (goskext_call_func + sizeof(int16_t) * 1) - 0xc0))
+                 0x8941 == *(unsigned short *) (goskext_call_func) &&
+                 0xc0 <= *(goskext_call_func + sizeof(int16_t)) && 0xc7 >= *(goskext_call_func + sizeof(int16_t)))
         {
             goskext_call_func_3_bytes = TRUE;
         }

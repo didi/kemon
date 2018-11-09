@@ -396,6 +396,10 @@ inline_hook_mac_policy_register(
 
         status = KERN_SUCCESS;
     }
+    else if (!flag && !mac_policy_register_original_size && !mac_policy_register_inline_hooked)
+    {
+        status = KERN_SUCCESS;
+    }
 
     return status;
 }
@@ -1250,6 +1254,14 @@ inline_hook_oskext_start(
             else if (goskext_call_func_2_bytes)
                 unhook_oskext_call((void *) (goskext_call_func - 2), oskext_call_original_size);
         }
+
+        status = KERN_SUCCESS;
+    }
+    else if (!flag && !goskext_start && !goskext_call_func)
+    {
+        //
+        // Unknown platform
+        //
 
         status = KERN_SUCCESS;
     }
