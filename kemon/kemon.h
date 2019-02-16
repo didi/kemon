@@ -23,11 +23,15 @@ Revision History:
 // macOS version
 //
 
-int gmacOS_major = 0;
+int gmacOS_major;
+int gmacOS_minor;
+const char *gmacOS_version;
 
-int gmacOS_minor = 0;
+//
+// The kmod_info_t linked list
+//
 
-const char *gmacOS_version = NULL;
+kmod_info_t *gkmod_info;
 
 //
 // Global resources
@@ -35,55 +39,57 @@ const char *gmacOS_version = NULL;
 
 #define DRIVER_TAG_NAME "com.assuresec.kemon"
 
-OSMallocTag gmalloc_tag = NULL;
+OSMallocTag gmalloc_tag;
 
 //
 // Lock group
 //
 
-lck_grp_t *glock_group = NULL;
+lck_grp_t *glock_group;
+
+//
+// kauth_configuration[length] holds current configuration string
+//
+
+#define kauth_configuration_length 0x1000
+
+static char kauth_configuration[kauth_configuration_length];
 
 //
 // Kauth configuration mutex lock
 //
 
-static lck_mtx_t *gkauth_configuration_lock = NULL;
+static lck_mtx_t *kauth_configuration_lock;
 
 //
-// gconfiguration[n] holds current configuration string
+// Points into kauth_configuration[length]
 //
 
-static char gconfiguration[0x1000] = {0};
-
-//
-// Points into gconfiguration[n]
-//
-
-static const char *gprefix = NULL;
-
-//
-// An area of interest for authorization
-//
-
-static char *glistener_scope = NULL;
-
-//
-// glistener is our handle to the installed scope listener
-//
-
-static kauth_listener_t glistener = NULL;
-
-//
-// Kauth counter
-//
-
-static SInt32 gactivation_count = 0;
+static const char *kauth_configuration_prefix;
 
 //
 // The maximum length of the listener scope and action string
 //
 
 #define max_string_length 0x4000
+
+//
+// An area of interest for Kauth
+//
+
+static char *kauth_listener_scope;
+
+//
+// kauth_listener is our handle to the installed scope listener
+//
+
+static kauth_listener_t kauth_listener;
+
+//
+// Kauth counter
+//
+
+static SInt32 kauth_activation_count;
 
 //
 // "com.apple.kauth.fileop" is the default setting of our Kauth listener
@@ -107,8 +113,7 @@ static SInt32 gactivation_count = 0;
 // vnode_action_info describes one of the action bits in the vnode scope's action field
 //
 
-struct vnode_action_info
-{
+struct vnode_action_info {
     kauth_action_t mask;        // only one bit should be set
     const char *name_file;      // descriptive name of the bit for files
     const char *name_directory; // descriptive name of the bit for directories
@@ -128,8 +133,7 @@ struct vnode_action_info
 // vnode_action_table is a table of all the known action bits and their human readable names
 //
 
-static const struct vnode_action_info vnode_action_table[] =
-{
+static const struct vnode_action_info vnode_action_table[] = {
     VNODE_ACTION_FILEDIR(READ_DATA, LIST_DIRECTORY),     // 1 << 1
                                                          // #define KAUTH_VNODE_LIST_DIRECTORY KAUTH_VNODE_READ_DATA
     VNODE_ACTION_FILEDIR(WRITE_DATA, ADD_FILE),          // 1 << 2
@@ -158,8 +162,7 @@ static const struct vnode_action_info vnode_action_table[] =
 
 #define vnode_action_count (sizeof(vnode_action_table) / sizeof(*vnode_action_table))
 
-enum two_pass_algorithm
-{
+enum two_pass_algorithm {
     calculate_length,
     allocate_string
 };
@@ -168,34 +171,33 @@ enum two_pass_algorithm
 // For file creation
 //
 
-static unsigned char grbp_offset = 0;
+static unsigned char rbp_offset;
 
-static boolean_t gfmode_in_rbp = FALSE;
+static SInt32 process_namespace_fsctl_count;
 
-static SInt32 gprocess_namespace_fsctl_count = 0;
-
-static boolean_t gunknown_platform_fileop_open = FALSE;
+static boolean_t unknown_platform_fileop_open;
 
 //
 // For process command line
 //
 
-static boolean_t gimage_params_in_r15 = FALSE;
-static boolean_t gimage_params_in_r14 = FALSE;
-static boolean_t gimage_params_in_r13 = FALSE;
-static boolean_t gimage_params_in_r12 = FALSE;
+static boolean_t image_params_in_r15;
+static boolean_t image_params_in_r14;
+static boolean_t image_params_in_r13;
+static boolean_t image_params_in_r12;
 
-static UInt32 gexec_activate_image_in_progress = 0;
+static UInt32 exec_activate_image_in_progress;
 
-static boolean_t gunknown_platform_fileop_exec = FALSE;
+static boolean_t unknown_platform_fileop_exec;
 
 //
-// image_params has been documented:
+// image_params has been documented (/bsd/sys/imgact.h):
 // https://developer.apple.com/reference/kernel/image_params
 //
 
-struct image_params
-{
+#define IMG_SHELL_SIZE 512
+
+struct image_params {
     user_addr_t ip_user_fname;
     user_addr_t ip_user_argv;
     user_addr_t ip_user_envv;
@@ -219,7 +221,7 @@ struct image_params
     int ip_strspace;
     user_size_t ip_arch_offset;
     user_size_t ip_arch_size;
-    char ip_interp_buffer[512];
+    char ip_interp_buffer[IMG_SHELL_SIZE];
     int ip_interp_sugid_fd;
     struct vfs_context *ip_vfs_context;
     struct nameidata *ip_ndp;
@@ -235,19 +237,20 @@ struct image_params
     void *ip_px_smpx;
     void *ip_px_persona;
     void *ip_cs_error;
+
+    //
+    // xnu-4570
+    //
+
+    uint64_t ip_dyld_fsid;
+    uint64_t ip_dyld_fsobjid;
 };
 
 //
-// goid_registered tracks whether we've registered our OID or not
+// oid_registered tracks whether we've registered our OID or not
 //
 
-static UInt32 goid_registered = 0;
-
-//
-// The kmod_info_t linked list
-//
-
-kmod_info_t *gkmod_item = NULL;
+static UInt32 oid_registered;
 
 //
 // Declaration

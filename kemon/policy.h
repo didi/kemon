@@ -25,20 +25,19 @@ Revision History:
 // Shadow Walker
 //
 
-#define MAC_SHADOW_WALKER TRUE
+#define MAC_POLICY_SHADOW_WALKER TRUE
 
 //
 // Current MAC policy OPS version
 //
 
-#define MAC_POLICY_OPS_VERSION 53
+#define MAC_POLICY_OPS_VERSION 55
 
 //
 // MAC policy module operations
 //
 
-struct mac_policy_ops
-{
+struct mac_policy_ops {
     //
     // mpo_audit
     //
@@ -149,7 +148,7 @@ struct mac_policy_ops
     void *mpo_ipq_label_update;
 
     //
-    // mpo_lctx* were replaced by the follows
+    // mpo_lctx* were replaced by the follows (mpo_file and mpo_vnode)
     //
 
     void *mpo_file_check_library_validation;
@@ -240,9 +239,9 @@ struct mac_policy_ops
     void *mpo_proc_check_inherit_ipc_ports;
     void *mpo_vnode_check_rename;
     void *mpo_kext_check_query;
-    void *mpo_iokit_check_nvram_get;
-    void *mpo_iokit_check_nvram_set;
-    void *mpo_iokit_check_nvram_delete;
+    void *mpo_proc_notify_exec_complete;   // mpo_iokit_check_nvram_get, version 53
+    void *mpo_reserved5;                   // mpo_iokit_check_nvram_set, version 53
+    void *mpo_reserved6;                   // mpo_iokit_check_nvram_delete, version 53
     void *mpo_proc_check_expose_task;
     void *mpo_proc_check_set_host_special_port;
     void *mpo_proc_check_set_host_exception_port;
@@ -501,35 +500,35 @@ struct mac_policy_ops
 };
 
 //
-// This flag indicates that the policy module must be loaded and initialized early in the boot process.
-// If the flag is specified, attempts to register the module following boot will be rejected.
+// This flag indicates that the policy module must be loaded and initialized early in the boot process
+// If the flag is specified, attempts to register the module following boot will be rejected
 //
 
 #define MPC_LOADTIME_FLAG_NOTLATE    0x00000001
 
 //
-// This flag indicates that the policy module may be unloaded.
-// If this flag is not set, then the policy framework will reject requests to unload the module.
+// This flag indicates that the policy module may be unloaded
+// If this flag is not set, then the policy framework will reject requests to unload the module
 //
 
 #define MPC_LOADTIME_FLAG_UNLOADOK   0x00000002
 
 //
-// This flag is not yet supported.
+// This flag is not yet supported
 //
 
 #define MPC_LOADTIME_FLAG_LABELMBUFS 0x00000004
 
 //
-// This flag indicates that the policy module is a base policy.
-// Only one module can declare itself as base, otherwise the boot process will be halted.
+// This flag indicates that the policy module is a base policy
+// Only one module can declare itself as base, otherwise the boot process will be halted
 //
 
 #define MPC_LOADTIME_BASE_POLICY     0x00000008
 
 //
-// This flag indicates that the policy module has been successfully registered with the TrustedBSD MAC framework.
-// The framework will set this flag in the mpc_runtime_flags field of the policy's mac_policy_conf structure after registering the policy.
+// This flag indicates that the policy module has been successfully registered with the TrustedBSD MAC framework
+// The framework will set this flag in the mpc_runtime_flags field of the policy's mac_policy_conf structure after registering the policy
 //
 
 #define MPC_RUNTIME_FLAG_REGISTERED  0x00000001
@@ -538,8 +537,7 @@ struct mac_policy_ops
 // MAC policy configuration
 //
 
-struct mac_policy_conf
-{
+struct mac_policy_conf {
     char *mpc_name;                     // policy name
     char *mpc_fullname;                 // full name
     char const * const *mpc_labelnames; // managed label namespaces
@@ -562,8 +560,7 @@ typedef unsigned int mac_policy_handle_t;
 // File internal
 //
 
-struct fileglob
-{
+struct fileglob {
     LIST_ENTRY(fileglob) f_msglist;
     int32_t fg_flag;
     int32_t fg_type;
@@ -576,8 +573,8 @@ struct fileglob
 };
 
 //
-// This function is called to register a policy with the MAC framework.
-// A policy module will typically call this from the Darwin KEXT registration routine.
+// This function is called to register a policy with the MAC framework
+// A policy module will typically call this from the Darwin KEXT registration routine
 //
 
 extern
@@ -589,8 +586,8 @@ mac_policy_register(
     );
 
 //
-// This function is called to de-register a policy with the MAC framework.
-// A policy module will typically call this from the Darwin KEXT de-registration routine.
+// This function is called to de-register a policy with the MAC framework
+// A policy module will typically call this from the Darwin KEXT de-registration routine
 //
 
 extern
@@ -603,19 +600,21 @@ mac_policy_unregister(
 // Declaration
 //
 
+extern lck_grp_t *glock_group;
+
 extern OSMallocTag gmalloc_tag;
 
-extern lck_mtx_t *gmac_policy_lock;
+extern kmod_info_t *gkmod_info;
 
-extern lck_mtx_t *goskext_handler_lock;
-
-extern kmod_info_t *gkmod_item;
-
-extern vm_address_t gkext_base;
-
-extern vm_size_t gkext_size;
+//
+// OSKext::start() module information and mutex lock
+//
 
 extern char *gkext_name;
+extern vm_address_t gkext_base;
+extern vm_size_t gkext_size;
+
+extern lck_mtx_t *goskext_handler_lock;
 
 extern
 int

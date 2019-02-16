@@ -27,15 +27,31 @@ Revision History:
 
 #define ENQUEUED_EVENT_LIMIT 0x10086
 
-static thread_t gnew_kernel_thread = THREAD_NULL;
+//
+// NKE log entry
+//
+
+struct nke_log_entry {
+    TAILQ_ENTRY(nke_log_entry) list;
+    uint32_t size;
+    uint32_t retry;
+};
+
+//
+// Event queue
+//
+
+TAILQ_HEAD(nke_entry, nke_log_entry);
+
+static struct nke_entry nke_list;
 
 //
 // Declaration
 //
 
-extern OSMallocTag gmalloc_tag;
+extern lck_grp_t *glock_group;
 
-extern lck_mtx_t *gnke_event_log_lock;
+extern OSMallocTag gmalloc_tag;
 
 extern
 void

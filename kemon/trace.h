@@ -25,18 +25,16 @@ Revision History:
 
 #define DRIVER_NAME "Kemon"
 
-enum driver_version
-{
+enum driver_version {
     ALPHA_VERSION_08_FEB_2017 = 0x01000001,
-    ALPHA_VERSION_25_SEP_2018 = 0x01000002,
-    ALPHA_VERSION_08_NOV_2018 = 0x01000003,
+    ALPHA_VERSION_12_DEC_2018 = 0x01000010,
     RELEASE_VERSION
 };
 
 #define CURRENT_VERSION RELEASE_VERSION - 1
 
 //
-// Framework troubleshooting
+// Kemon framework troubleshooting
 //
 
 #define FRAMEWORK_TROUBLESHOOTING TRUE
@@ -45,13 +43,13 @@ enum driver_version
 // Kernel authorization troubleshooting
 //
 
-#define KAUTH_TROUBLESHOOTING TRUE
+#define KAUTH_TROUBLESHOOTING FALSE
 
 //
 // Socket filter troubleshooting
 //
 
-#define SFLT_TROUBLESHOOTING TRUE
+#define SFLT_TROUBLESHOOTING FALSE
 #define SFLT_TRAFFIC_TROUBLESHOOTING FALSE
 
 //
@@ -67,15 +65,19 @@ enum driver_version
 #define BreakPoint() __asm__ volatile ("int3");
 
 //
-// Hex dumper
+// For macOS 10.14 Mojave
+//
+
+#define SNPRINTF_LENGTH_LIMIT 0xF2
+
+//
+// Hex printf
 //
 
 #define HEX_PRINTF_B 0x01
 #define HEX_PRINTF_W 0x02
 #define HEX_PRINTF_D 0x04
 #define HEX_PRINTF_Q 0x08
-
-static unsigned char hex_buffer[0x80] = {0};
 
 //
 // Declaration

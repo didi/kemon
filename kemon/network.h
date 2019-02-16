@@ -20,7 +20,6 @@ Revision History:
 
 
 #include <netinet/in.h>
-#include <net/ethernet.h>
 
 
 //
@@ -44,21 +43,12 @@ Revision History:
 #define SFLT_BUNDLE_ID "com.assuresec.kemon.sflt"
 
 //
-// Connection status
-//
-
-#define STATE_CONNECT_IN  0x01
-#define STATE_CONNECT_OUT 0x02
-#define STATE_LISTENING   0x04
-
-//
 // DNS protocol
 //
 
 #define DNS_PORT 53
 
-struct dnshdr
-{
+struct dnshdr {
     unsigned short id;      // 16 bit message ID
 
     unsigned char rd:1;     // Recursion desired
@@ -78,25 +68,30 @@ struct dnshdr
 };
 
 //
-// Packet log information
+// Connection status
 //
 
-struct log_info
-{
+#define STATE_CONNECT_IN  0x01
+#define STATE_CONNECT_OUT 0x02
+#define STATE_LISTENING   0x04
+
+//
+// Packet information
+//
+
+struct log_info {
     pid_t pid;
     pid_t uid;
     size_t length;
-    uint32_t status;
+    UInt32 status;
     struct timeval start;
     struct timeval stop;
 
-    union
-    {
+    union {
         struct sockaddr_in addr4;
         struct sockaddr_in6 addr6;
     } source;
-    union
-    {
+    union {
         struct sockaddr_in addr4;
         struct sockaddr_in6 addr6;
     } destination;
@@ -106,36 +101,39 @@ struct log_info
 
     SInt32 in_bytes;
     SInt32 in_packets;
-    SInt32 first_in_packet;
-    uint32_t first_in_packet_size;
-    void *first_in_packet_data;
+    UInt32 first_in_bytes;
+    void *first_in_packet;
 
     SInt32 out_bytes;
     SInt32 out_packets;
-    SInt32 first_out_packet;
-    uint32_t first_out_packet_size;
-    void *first_out_packet_data;
+    UInt32 first_out_bytes;
+    void *first_out_packet;
 };
 
 //
 // Per socket extension control block for the log function
 //
 
-struct log_entry
-{
-    TAILQ_ENTRY(log_entry) next;
+struct sflt_log_entry {
+    TAILQ_ENTRY(sflt_log_entry) list;
     int protocol;
     socket_t socket;
     boolean_t tcp_ipv4_attached;
     boolean_t udp_ipv4_attached;
-    boolean_t detach;
+    boolean_t detached;
     struct log_info info;
 };
 
-TAILQ_HEAD(ListEntry, log_entry);
+//
+// Event queues
+//
 
-struct filter_stats
-{
+TAILQ_HEAD(sflt_entry, sflt_log_entry);
+
+static struct sflt_entry sflt_active_list;
+static struct sflt_entry sflt_inactive_list;
+
+struct filter_stats {
     //
     // TCP IPv4 socket
     //
@@ -148,25 +146,22 @@ struct filter_stats
     // UDP IPv4 socket
     //
 
-    UInt32 udp_ipv4_total;
-    UInt32 udp_ipv4_in_use;
+    SInt32 udp_ipv4_total;
+    SInt32 udp_ipv4_in_use;
     UInt32 udp_ipv4_registered;
 
     boolean_t filter_enabled;
 };
 
-static struct filter_stats gfilter_stats;
-
-static struct ListEntry glist_active;
-static struct ListEntry glist_inactive;
+static struct filter_stats filter_stats;
 
 //
 // Declaration
 //
 
-extern OSMallocTag gmalloc_tag;
+extern lck_grp_t *glock_group;
 
-extern lck_mtx_t *gnetwork_filter_lock;
+extern OSMallocTag gmalloc_tag;
 
 extern
 kern_return_t

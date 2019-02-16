@@ -34,13 +34,11 @@ static char mac_policy_register_inline[12] =
 
 #define SIZE_OF_MAC_POLICY_REGISTER_TRAMPOLINE 30
 
-static uint64_t jmp_to_mac_policy_register_prologue_handler = 0;
+static uint64_t jmp_to_mac_policy_register_prologue_handler;
+static uint64_t jmp_back_to_mac_policy_register;
 
-static uint64_t jmp_back_to_mac_policy_register = 0;
-
-static uint32_t mac_policy_register_original_size = 0;
-
-static boolean_t mac_policy_register_inline_hooked = FALSE;
+static uint32_t mac_policy_register_original_size;
+static boolean_t mac_policy_register_inline_hooked;
 
 //
 // Returns EEXIST
@@ -68,13 +66,11 @@ static char oskext_start_inline[12] =
 
 #define SIZE_OF_OSKEXT_START_TRAMPOLINE 30
 
-static uint64_t jmp_to_oskext_start_prologue_handler = 0;
+static uint64_t jmp_to_oskext_start_prologue_handler;
+static uint64_t jmp_back_to_oskext_start;
 
-static uint64_t jmp_back_to_oskext_start = 0;
-
-static uint32_t oskext_start_original_size = 0;
-
-static boolean_t oskext_start_inline_hooked = FALSE;
+static uint32_t oskext_start_original_size;
+static boolean_t oskext_start_inline_hooked;
 
 //
 // ff 25 00 00 00 00   jmpq   *(%rip)
@@ -89,22 +85,19 @@ static char oskext_call_inline[6] =
 
 #define OFFSET_OF_OSKEXT_CALL_TRAMPOLINE 60
 
-static uint64_t jmp_to_oskext_call_pre_handler = 0;
+static uint64_t jmp_to_oskext_call_pre_handler;
+static uint64_t jmp_to_oskext_call_post_handler;
+static uint64_t jmp_back_to_oskext_call;
 
-static uint64_t jmp_to_oskext_call_post_handler = 0;
-
-static uint64_t jmp_back_to_oskext_call = 0;
-
-static uint32_t oskext_call_original_size = 0;
-
-static boolean_t oskext_call_inline_hooked = FALSE;
+static uint32_t oskext_call_original_size;
+static boolean_t oskext_call_inline_hooked;
 
 //
 // b8 05 00 00 00   movl   $0x5, %eax
 // c3               retq
 //
 
-static char returns_five[] =
+static char returns_five[6] =
 "\xb8\x05\x00\x00\x00"
 "\xc3";
 
@@ -113,16 +106,15 @@ static char returns_five[] =
 // c3      retq
 //
 
-static char returns_zero[] =
+static char returns_zero[3] =
 "\x31\xc0"
 "\xc3";
 
 //
-// OSKext class
+// OSString
 //
 
-struct osstring_el_capitan
-{
+struct osstring_el_capitan {
     void *osobject;
     unsigned long retain_count;
     unsigned int length;
@@ -130,8 +122,7 @@ struct osstring_el_capitan
     char *string;
 };
 
-struct osstring_macos_sierra
-{
+struct osstring_macos_sierra {
     void *osobject;
     unsigned long retain_count;
     char *string;
@@ -139,8 +130,7 @@ struct osstring_macos_sierra
     unsigned int flags;
 };
 
-struct osstring_macos_high_sierra
-{
+struct osstring_macos_high_sierra {
     void *osobject;
     unsigned long retain_count;
     char *string;
@@ -148,8 +138,7 @@ struct osstring_macos_high_sierra
     unsigned int length;
 };
 
-struct osstring_macos_mojave
-{
+struct osstring_macos_mojave {
     void *osobject;
     unsigned long retain_count;
     char *string;
@@ -157,8 +146,11 @@ struct osstring_macos_mojave
     unsigned int length;
 };
 
-struct oskext
-{
+//
+// OSKext
+//
+
+struct oskext {
     void *osobject;
     unsigned long retain_count;
     void *info_dict;
@@ -172,25 +164,10 @@ struct oskext
 };
 
 //
-// Enable and disable interrupts
-//
-
-#define enable_interrupts() __asm__ volatile ("sti");
-
-#define disable_interrupts() __asm__ volatile ("cli");
-
-//
-// In our examples, there is no need to use mutex lock to protect gcr0
-//
-
-static unsigned long gcr0 = 0;
-
-//
 // Base address of the OSKext::start()
 //
 
 extern unsigned char *goskext_start;
-
 extern unsigned char *goskext_call_func;
 
 //
@@ -198,7 +175,6 @@ extern unsigned char *goskext_call_func;
 //
 
 extern boolean_t goskext_call_func_2_bytes;
-
 extern boolean_t goskext_call_func_3_bytes;
 
 //
@@ -207,27 +183,27 @@ extern boolean_t goskext_call_func_3_bytes;
 
 extern int gmacOS_major;
 
+extern lck_grp_t *glock_group;
+
 extern OSMallocTag gmalloc_tag;
 
-extern lck_mtx_t *goskext_handler_lock;
-
-#if MAC_TROUBLESHOOTING
+#if MAC_POLICY_SHADOW_WALKER
 extern
 const char *
-get_load_time_option_name(
+get_loadtime_option(
     int flags
     );
 
 extern
 void
-show_mac_policy_handler(
+show_mac_policy_handlers(
     struct mac_policy_ops *ops
     );
-#endif
+#endif // MAC_POLICY_SHADOW_WALKER
 
 //
-// This function is called to register a policy with the MAC framework.
-// A policy module will typically call this from the Darwin KEXT registration routine.
+// This function is called to register a policy with the MAC framework
+// A policy module will typically call this from the Darwin KEXT registration routine
 //
 
 extern

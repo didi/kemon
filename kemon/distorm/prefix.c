@@ -4,7 +4,7 @@ prefix.c
 diStorm3 - Powerful disassembler for X86/AMD64
 http://ragestorm.net/distorm/
 distorm at gmail dot com
-Copyright (C) 2003-2016 Gil Dabah
+Copyright (C) 2003-2018 Gil Dabah
 This library is licensed under the BSD license. See the file COPYING.
 */
 
@@ -75,7 +75,7 @@ void prefixes_ignore_all(_PrefixState* ps)
 {
 	int i;
 	for (i = 0; i < PFXIDX_MAX; i++)
-		prefixes_ignore(ps, (_PrefixIndexer) i);
+		prefixes_ignore(ps, i);
 }
 
 /* Calculates which prefixes weren't used and accordingly sets the bits in the unusedPrefixesMask. */

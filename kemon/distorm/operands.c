@@ -4,7 +4,7 @@ operands.c
 diStorm3 - Powerful disassembler for X86/AMD64
 http://ragestorm.net/distorm/
 distorm at gmail dot com
-Copyright (C) 2003-2016 Gil Dabah
+Copyright (C) 2003-2018 Gil Dabah
 This library is licensed under the BSD license. See the file COPYING.
 */
 
@@ -931,6 +931,9 @@ int operands_extract(_CodeInfo* ci, _DInst* di, _InstInfo* ii,
 		break;
 		case OT_ACC_FULL_NOT64: /* No REX.W support for IN/OUT. */
 			vrex &= ~PREFIX_EX_W;
+			if (vrex & PREFIX_EX_W) { /* Avoid dead store warning: value stored to 'vrex' is never read. */
+				;
+			}
 		case OT_ACC_FULL:
 			if (effOpSz == Decode16Bits) {
 				ps->usedPrefixes |= INST_PRE_OP_SIZE;

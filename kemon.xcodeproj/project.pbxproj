@@ -3,85 +3,85 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 48;
+	objectVersion = 50;
 	objects = {
 
 /* Begin PBXBuildFile section */
-		1E1C636F20F6A3950068B327 /* decoder.c in Sources */ = {isa = PBXBuildFile; fileRef = 1E1C635A20F6A3940068B327 /* decoder.c */; };
-		1E1C637020F6A3950068B327 /* textdefs.c in Sources */ = {isa = PBXBuildFile; fileRef = 1E1C635B20F6A3940068B327 /* textdefs.c */; };
-		1E1C637120F6A3950068B327 /* distorm.c in Sources */ = {isa = PBXBuildFile; fileRef = 1E1C635C20F6A3940068B327 /* distorm.c */; };
-		1E1C637220F6A3950068B327 /* prefix.c in Sources */ = {isa = PBXBuildFile; fileRef = 1E1C635D20F6A3940068B327 /* prefix.c */; };
-		1E1C637320F6A3950068B327 /* prefix.h in Headers */ = {isa = PBXBuildFile; fileRef = 1E1C635E20F6A3940068B327 /* prefix.h */; };
-		1E1C637420F6A3950068B327 /* operands.h in Headers */ = {isa = PBXBuildFile; fileRef = 1E1C635F20F6A3940068B327 /* operands.h */; };
-		1E1C637520F6A3950068B327 /* distorm.h in Headers */ = {isa = PBXBuildFile; fileRef = 1E1C636120F6A3940068B327 /* distorm.h */; };
-		1E1C637620F6A3950068B327 /* mnemonics.h in Headers */ = {isa = PBXBuildFile; fileRef = 1E1C636220F6A3940068B327 /* mnemonics.h */; };
-		1E1C637720F6A3950068B327 /* operands.c in Sources */ = {isa = PBXBuildFile; fileRef = 1E1C636320F6A3940068B327 /* operands.c */; };
-		1E1C637820F6A3950068B327 /* instructions.c in Sources */ = {isa = PBXBuildFile; fileRef = 1E1C636420F6A3940068B327 /* instructions.c */; };
-		1E1C637920F6A3950068B327 /* config.h in Headers */ = {isa = PBXBuildFile; fileRef = 1E1C636520F6A3940068B327 /* config.h */; };
-		1E1C637A20F6A3950068B327 /* x86defs.h in Headers */ = {isa = PBXBuildFile; fileRef = 1E1C636620F6A3940068B327 /* x86defs.h */; };
-		1E1C637B20F6A3950068B327 /* mnemonics.c in Sources */ = {isa = PBXBuildFile; fileRef = 1E1C636720F6A3940068B327 /* mnemonics.c */; };
-		1E1C637C20F6A3950068B327 /* decoder.h in Headers */ = {isa = PBXBuildFile; fileRef = 1E1C636820F6A3940068B327 /* decoder.h */; };
-		1E1C637D20F6A3950068B327 /* textdefs.h in Headers */ = {isa = PBXBuildFile; fileRef = 1E1C636920F6A3950068B327 /* textdefs.h */; };
-		1E1C637E20F6A3950068B327 /* wstring.h in Headers */ = {isa = PBXBuildFile; fileRef = 1E1C636A20F6A3950068B327 /* wstring.h */; };
-		1E1C637F20F6A3950068B327 /* insts.h in Headers */ = {isa = PBXBuildFile; fileRef = 1E1C636B20F6A3950068B327 /* insts.h */; };
-		1E1C638020F6A3950068B327 /* insts.c in Sources */ = {isa = PBXBuildFile; fileRef = 1E1C636C20F6A3950068B327 /* insts.c */; };
-		1E1C638120F6A3950068B327 /* instructions.h in Headers */ = {isa = PBXBuildFile; fileRef = 1E1C636D20F6A3950068B327 /* instructions.h */; };
-		1E1C638220F6A3950068B327 /* wstring.c in Sources */ = {isa = PBXBuildFile; fileRef = 1E1C636E20F6A3950068B327 /* wstring.c */; };
-		1E228D142081E44600F41461 /* nke.h in Headers */ = {isa = PBXBuildFile; fileRef = 1E228D0E2081E44600F41461 /* nke.h */; };
-		1E228D152081E44600F41461 /* network.h in Headers */ = {isa = PBXBuildFile; fileRef = 1E228D0F2081E44600F41461 /* network.h */; };
-		1E228D162081E44600F41461 /* policy.c in Sources */ = {isa = PBXBuildFile; fileRef = 1E228D102081E44600F41461 /* policy.c */; };
-		1E228D172081E44600F41461 /* network.c in Sources */ = {isa = PBXBuildFile; fileRef = 1E228D112081E44600F41461 /* network.c */; };
-		1E228D182081E44600F41461 /* policy.h in Headers */ = {isa = PBXBuildFile; fileRef = 1E228D122081E44600F41461 /* policy.h */; };
-		1E228D192081E44600F41461 /* nke.c in Sources */ = {isa = PBXBuildFile; fileRef = 1E228D132081E44600F41461 /* nke.c */; };
-		1E2CCE0F206D8D8B000FBAB1 /* kemon.c in Sources */ = {isa = PBXBuildFile; fileRef = 1E2CCE0E206D8D8B000FBAB1 /* kemon.c */; };
-		1E2CCE17206D8E2C000FBAB1 /* kemon.h in Headers */ = {isa = PBXBuildFile; fileRef = 1E2CCE16206D8E2C000FBAB1 /* kemon.h */; };
-		1E35F98720F82F330048103E /* inline.c in Sources */ = {isa = PBXBuildFile; fileRef = 1E35F98520F82F330048103E /* inline.c */; };
-		1E35F98820F82F330048103E /* inline.h in Headers */ = {isa = PBXBuildFile; fileRef = 1E35F98620F82F330048103E /* inline.h */; };
-		1E9BA078209161A9001A9BB8 /* include.h in Headers */ = {isa = PBXBuildFile; fileRef = 1E9BA077209161A9001A9BB8 /* include.h */; };
-		1E9EC6FC207448E300C61D80 /* trace.h in Headers */ = {isa = PBXBuildFile; fileRef = 1E9EC6FA207448E300C61D80 /* trace.h */; };
-		1E9EC6FD207448E300C61D80 /* trace.c in Sources */ = {isa = PBXBuildFile; fileRef = 1E9EC6FB207448E300C61D80 /* trace.c */; };
+		1E0B856A21E82A0B008F78F6 /* inline.h in Headers */ = {isa = PBXBuildFile; fileRef = 1E0B856821E82A0B008F78F6 /* inline.h */; };
+		1E0B856B21E82A0B008F78F6 /* inline.c in Sources */ = {isa = PBXBuildFile; fileRef = 1E0B856921E82A0B008F78F6 /* inline.c */; };
+		1E3986A021EFF0E2007E01FC /* network.c in Sources */ = {isa = PBXBuildFile; fileRef = 1E39869A21EFF0E2007E01FC /* network.c */; };
+		1E3986A121EFF0E2007E01FC /* nke.c in Sources */ = {isa = PBXBuildFile; fileRef = 1E39869B21EFF0E2007E01FC /* nke.c */; };
+		1E3986A221EFF0E2007E01FC /* policy.h in Headers */ = {isa = PBXBuildFile; fileRef = 1E39869C21EFF0E2007E01FC /* policy.h */; };
+		1E3986A321EFF0E2007E01FC /* network.h in Headers */ = {isa = PBXBuildFile; fileRef = 1E39869D21EFF0E2007E01FC /* network.h */; };
+		1E3986A421EFF0E2007E01FC /* policy.c in Sources */ = {isa = PBXBuildFile; fileRef = 1E39869E21EFF0E2007E01FC /* policy.c */; };
+		1E3986A521EFF0E2007E01FC /* nke.h in Headers */ = {isa = PBXBuildFile; fileRef = 1E39869F21EFF0E2007E01FC /* nke.h */; };
+		1E39870F21EFF2E9007E01FC /* instructions.c in Sources */ = {isa = PBXBuildFile; fileRef = 1E3986FA21EFF2E9007E01FC /* instructions.c */; };
+		1E39871021EFF2E9007E01FC /* textdefs.c in Sources */ = {isa = PBXBuildFile; fileRef = 1E3986FB21EFF2E9007E01FC /* textdefs.c */; };
+		1E39871121EFF2E9007E01FC /* operands.h in Headers */ = {isa = PBXBuildFile; fileRef = 1E3986FC21EFF2E9007E01FC /* operands.h */; };
+		1E39871221EFF2E9007E01FC /* config.h in Headers */ = {isa = PBXBuildFile; fileRef = 1E3986FD21EFF2E9007E01FC /* config.h */; };
+		1E39871321EFF2E9007E01FC /* prefix.c in Sources */ = {isa = PBXBuildFile; fileRef = 1E3986FE21EFF2E9007E01FC /* prefix.c */; };
+		1E39871421EFF2E9007E01FC /* wstring.h in Headers */ = {isa = PBXBuildFile; fileRef = 1E3986FF21EFF2E9007E01FC /* wstring.h */; };
+		1E39871521EFF2E9007E01FC /* mnemonics.c in Sources */ = {isa = PBXBuildFile; fileRef = 1E39870021EFF2E9007E01FC /* mnemonics.c */; };
+		1E39871621EFF2E9007E01FC /* distorm.h in Headers */ = {isa = PBXBuildFile; fileRef = 1E39870221EFF2E9007E01FC /* distorm.h */; };
+		1E39871721EFF2E9007E01FC /* mnemonics.h in Headers */ = {isa = PBXBuildFile; fileRef = 1E39870321EFF2E9007E01FC /* mnemonics.h */; };
+		1E39871821EFF2E9007E01FC /* decoder.h in Headers */ = {isa = PBXBuildFile; fileRef = 1E39870421EFF2E9007E01FC /* decoder.h */; };
+		1E39871921EFF2E9007E01FC /* distorm.c in Sources */ = {isa = PBXBuildFile; fileRef = 1E39870521EFF2E9007E01FC /* distorm.c */; };
+		1E39871A21EFF2E9007E01FC /* insts.h in Headers */ = {isa = PBXBuildFile; fileRef = 1E39870621EFF2E9007E01FC /* insts.h */; };
+		1E39871B21EFF2E9007E01FC /* x86defs.h in Headers */ = {isa = PBXBuildFile; fileRef = 1E39870721EFF2E9007E01FC /* x86defs.h */; };
+		1E39871C21EFF2E9007E01FC /* textdefs.h in Headers */ = {isa = PBXBuildFile; fileRef = 1E39870821EFF2E9007E01FC /* textdefs.h */; };
+		1E39871D21EFF2E9007E01FC /* operands.c in Sources */ = {isa = PBXBuildFile; fileRef = 1E39870921EFF2E9007E01FC /* operands.c */; };
+		1E39871E21EFF2E9007E01FC /* instructions.h in Headers */ = {isa = PBXBuildFile; fileRef = 1E39870A21EFF2E9007E01FC /* instructions.h */; };
+		1E39871F21EFF2E9007E01FC /* decoder.c in Sources */ = {isa = PBXBuildFile; fileRef = 1E39870B21EFF2E9007E01FC /* decoder.c */; };
+		1E39872021EFF2E9007E01FC /* wstring.c in Sources */ = {isa = PBXBuildFile; fileRef = 1E39870C21EFF2E9007E01FC /* wstring.c */; };
+		1E39872121EFF2E9007E01FC /* prefix.h in Headers */ = {isa = PBXBuildFile; fileRef = 1E39870D21EFF2E9007E01FC /* prefix.h */; };
+		1E39872221EFF2E9007E01FC /* insts.c in Sources */ = {isa = PBXBuildFile; fileRef = 1E39870E21EFF2E9007E01FC /* insts.c */; };
+		1E63F95121E699C3007808E7 /* kemon.c in Sources */ = {isa = PBXBuildFile; fileRef = 1E63F95021E699C3007808E7 /* kemon.c */; };
+		1E63F95921E6C31D007808E7 /* kemon.h in Headers */ = {isa = PBXBuildFile; fileRef = 1E63F95821E6C31D007808E7 /* kemon.h */; };
+		1E63F95B21E6C329007808E7 /* include.h in Headers */ = {isa = PBXBuildFile; fileRef = 1E63F95A21E6C329007808E7 /* include.h */; };
+		1EE8D53E21E6C8B40087C63F /* trace.h in Headers */ = {isa = PBXBuildFile; fileRef = 1EE8D53D21E6C8B40087C63F /* trace.h */; };
+		1EE8D54021E6E5880087C63F /* trace.c in Sources */ = {isa = PBXBuildFile; fileRef = 1EE8D53F21E6E5880087C63F /* trace.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		1E1C635A20F6A3940068B327 /* decoder.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = decoder.c; path = kemon/distorm/decoder.c; sourceTree = SOURCE_ROOT; };
-		1E1C635B20F6A3940068B327 /* textdefs.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = textdefs.c; path = kemon/distorm/textdefs.c; sourceTree = SOURCE_ROOT; };
-		1E1C635C20F6A3940068B327 /* distorm.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = distorm.c; path = kemon/distorm/distorm.c; sourceTree = SOURCE_ROOT; };
-		1E1C635D20F6A3940068B327 /* prefix.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = prefix.c; path = kemon/distorm/prefix.c; sourceTree = SOURCE_ROOT; };
-		1E1C635E20F6A3940068B327 /* prefix.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = prefix.h; path = kemon/distorm/prefix.h; sourceTree = SOURCE_ROOT; };
-		1E1C635F20F6A3940068B327 /* operands.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = operands.h; path = kemon/distorm/operands.h; sourceTree = SOURCE_ROOT; };
-		1E1C636120F6A3940068B327 /* distorm.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = distorm.h; sourceTree = "<group>"; };
-		1E1C636220F6A3940068B327 /* mnemonics.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = mnemonics.h; sourceTree = "<group>"; };
-		1E1C636320F6A3940068B327 /* operands.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = operands.c; path = kemon/distorm/operands.c; sourceTree = SOURCE_ROOT; };
-		1E1C636420F6A3940068B327 /* instructions.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = instructions.c; path = kemon/distorm/instructions.c; sourceTree = SOURCE_ROOT; };
-		1E1C636520F6A3940068B327 /* config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = config.h; path = kemon/distorm/config.h; sourceTree = SOURCE_ROOT; };
-		1E1C636620F6A3940068B327 /* x86defs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = x86defs.h; path = kemon/distorm/x86defs.h; sourceTree = SOURCE_ROOT; };
-		1E1C636720F6A3940068B327 /* mnemonics.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = mnemonics.c; path = kemon/distorm/mnemonics.c; sourceTree = SOURCE_ROOT; };
-		1E1C636820F6A3940068B327 /* decoder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = decoder.h; path = kemon/distorm/decoder.h; sourceTree = SOURCE_ROOT; };
-		1E1C636920F6A3950068B327 /* textdefs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = textdefs.h; path = kemon/distorm/textdefs.h; sourceTree = SOURCE_ROOT; };
-		1E1C636A20F6A3950068B327 /* wstring.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = wstring.h; path = kemon/distorm/wstring.h; sourceTree = SOURCE_ROOT; };
-		1E1C636B20F6A3950068B327 /* insts.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = insts.h; path = kemon/distorm/insts.h; sourceTree = SOURCE_ROOT; };
-		1E1C636C20F6A3950068B327 /* insts.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = insts.c; path = kemon/distorm/insts.c; sourceTree = SOURCE_ROOT; };
-		1E1C636D20F6A3950068B327 /* instructions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = instructions.h; path = kemon/distorm/instructions.h; sourceTree = SOURCE_ROOT; };
-		1E1C636E20F6A3950068B327 /* wstring.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = wstring.c; path = kemon/distorm/wstring.c; sourceTree = SOURCE_ROOT; };
-		1E228D0E2081E44600F41461 /* nke.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = nke.h; sourceTree = "<group>"; };
-		1E228D0F2081E44600F41461 /* network.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = network.h; sourceTree = "<group>"; };
-		1E228D102081E44600F41461 /* policy.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = policy.c; sourceTree = "<group>"; };
-		1E228D112081E44600F41461 /* network.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = network.c; sourceTree = "<group>"; };
-		1E228D122081E44600F41461 /* policy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = policy.h; sourceTree = "<group>"; };
-		1E228D132081E44600F41461 /* nke.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = nke.c; sourceTree = "<group>"; };
-		1E2CCE0B206D8D8B000FBAB1 /* kemon.kext */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = kemon.kext; sourceTree = BUILT_PRODUCTS_DIR; };
-		1E2CCE0E206D8D8B000FBAB1 /* kemon.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = kemon.c; sourceTree = "<group>"; };
-		1E2CCE10206D8D8B000FBAB1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		1E2CCE16206D8E2C000FBAB1 /* kemon.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = kemon.h; sourceTree = "<group>"; };
-		1E35F98520F82F330048103E /* inline.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = inline.c; sourceTree = "<group>"; };
-		1E35F98620F82F330048103E /* inline.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = inline.h; sourceTree = "<group>"; };
-		1E9BA077209161A9001A9BB8 /* include.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = include.h; sourceTree = "<group>"; };
-		1E9EC6FA207448E300C61D80 /* trace.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = trace.h; sourceTree = "<group>"; };
-		1E9EC6FB207448E300C61D80 /* trace.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = trace.c; sourceTree = "<group>"; };
+		1E0B856821E82A0B008F78F6 /* inline.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = inline.h; sourceTree = "<group>"; };
+		1E0B856921E82A0B008F78F6 /* inline.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = inline.c; sourceTree = "<group>"; };
+		1E39869A21EFF0E2007E01FC /* network.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = network.c; sourceTree = "<group>"; };
+		1E39869B21EFF0E2007E01FC /* nke.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = nke.c; sourceTree = "<group>"; };
+		1E39869C21EFF0E2007E01FC /* policy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = policy.h; sourceTree = "<group>"; };
+		1E39869D21EFF0E2007E01FC /* network.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = network.h; sourceTree = "<group>"; };
+		1E39869E21EFF0E2007E01FC /* policy.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = policy.c; sourceTree = "<group>"; };
+		1E39869F21EFF0E2007E01FC /* nke.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = nke.h; sourceTree = "<group>"; };
+		1E3986FA21EFF2E9007E01FC /* instructions.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = instructions.c; sourceTree = "<group>"; };
+		1E3986FB21EFF2E9007E01FC /* textdefs.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = textdefs.c; sourceTree = "<group>"; };
+		1E3986FC21EFF2E9007E01FC /* operands.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = operands.h; sourceTree = "<group>"; };
+		1E3986FD21EFF2E9007E01FC /* config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = config.h; sourceTree = "<group>"; };
+		1E3986FE21EFF2E9007E01FC /* prefix.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = prefix.c; sourceTree = "<group>"; };
+		1E3986FF21EFF2E9007E01FC /* wstring.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = wstring.h; sourceTree = "<group>"; };
+		1E39870021EFF2E9007E01FC /* mnemonics.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = mnemonics.c; sourceTree = "<group>"; };
+		1E39870221EFF2E9007E01FC /* distorm.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = distorm.h; sourceTree = "<group>"; };
+		1E39870321EFF2E9007E01FC /* mnemonics.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = mnemonics.h; sourceTree = "<group>"; };
+		1E39870421EFF2E9007E01FC /* decoder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = decoder.h; sourceTree = "<group>"; };
+		1E39870521EFF2E9007E01FC /* distorm.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = distorm.c; sourceTree = "<group>"; };
+		1E39870621EFF2E9007E01FC /* insts.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = insts.h; sourceTree = "<group>"; };
+		1E39870721EFF2E9007E01FC /* x86defs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = x86defs.h; sourceTree = "<group>"; };
+		1E39870821EFF2E9007E01FC /* textdefs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = textdefs.h; sourceTree = "<group>"; };
+		1E39870921EFF2E9007E01FC /* operands.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = operands.c; sourceTree = "<group>"; };
+		1E39870A21EFF2E9007E01FC /* instructions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = instructions.h; sourceTree = "<group>"; };
+		1E39870B21EFF2E9007E01FC /* decoder.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = decoder.c; sourceTree = "<group>"; };
+		1E39870C21EFF2E9007E01FC /* wstring.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = wstring.c; sourceTree = "<group>"; };
+		1E39870D21EFF2E9007E01FC /* prefix.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = prefix.h; sourceTree = "<group>"; };
+		1E39870E21EFF2E9007E01FC /* insts.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = insts.c; sourceTree = "<group>"; };
+		1E63F94D21E699C3007808E7 /* kemon.kext */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = kemon.kext; sourceTree = BUILT_PRODUCTS_DIR; };
+		1E63F95021E699C3007808E7 /* kemon.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = kemon.c; sourceTree = "<group>"; };
+		1E63F95221E699C3007808E7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		1E63F95821E6C31D007808E7 /* kemon.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = kemon.h; sourceTree = "<group>"; };
+		1E63F95A21E6C329007808E7 /* include.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = include.h; sourceTree = "<group>"; };
+		1EE8D53D21E6C8B40087C63F /* trace.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = trace.h; sourceTree = "<group>"; };
+		1EE8D53F21E6E5880087C63F /* trace.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = trace.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		1E2CCE07206D8D8B000FBAB1 /* Frameworks */ = {
+		1E63F94A21E699C3007808E7 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -91,76 +91,75 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		1E1C635920F6A3740068B327 /* distrom */ = {
+		1E3986F921EFF2E9007E01FC /* distorm */ = {
 			isa = PBXGroup;
 			children = (
-				1E1C636520F6A3940068B327 /* config.h */,
-				1E1C635A20F6A3940068B327 /* decoder.c */,
-				1E1C636820F6A3940068B327 /* decoder.h */,
-				1E1C635C20F6A3940068B327 /* distorm.c */,
-				1E1C636020F6A3940068B327 /* include */,
-				1E1C636420F6A3940068B327 /* instructions.c */,
-				1E1C636D20F6A3950068B327 /* instructions.h */,
-				1E1C636C20F6A3950068B327 /* insts.c */,
-				1E1C636B20F6A3950068B327 /* insts.h */,
-				1E1C636720F6A3940068B327 /* mnemonics.c */,
-				1E1C636320F6A3940068B327 /* operands.c */,
-				1E1C635F20F6A3940068B327 /* operands.h */,
-				1E1C635D20F6A3940068B327 /* prefix.c */,
-				1E1C635E20F6A3940068B327 /* prefix.h */,
-				1E1C635B20F6A3940068B327 /* textdefs.c */,
-				1E1C636920F6A3950068B327 /* textdefs.h */,
-				1E1C636E20F6A3950068B327 /* wstring.c */,
-				1E1C636A20F6A3950068B327 /* wstring.h */,
-				1E1C636620F6A3940068B327 /* x86defs.h */,
+				1E39870121EFF2E9007E01FC /* include */,
+				1E3986FD21EFF2E9007E01FC /* config.h */,
+				1E39870721EFF2E9007E01FC /* x86defs.h */,
+				1E39870521EFF2E9007E01FC /* distorm.c */,
+				1E39870B21EFF2E9007E01FC /* decoder.c */,
+				1E39870421EFF2E9007E01FC /* decoder.h */,
+				1E3986FA21EFF2E9007E01FC /* instructions.c */,
+				1E39870A21EFF2E9007E01FC /* instructions.h */,
+				1E39870E21EFF2E9007E01FC /* insts.c */,
+				1E39870621EFF2E9007E01FC /* insts.h */,
+				1E39870021EFF2E9007E01FC /* mnemonics.c */,
+				1E39870921EFF2E9007E01FC /* operands.c */,
+				1E3986FC21EFF2E9007E01FC /* operands.h */,
+				1E3986FE21EFF2E9007E01FC /* prefix.c */,
+				1E39870D21EFF2E9007E01FC /* prefix.h */,
+				1E3986FB21EFF2E9007E01FC /* textdefs.c */,
+				1E39870821EFF2E9007E01FC /* textdefs.h */,
+				1E39870C21EFF2E9007E01FC /* wstring.c */,
+				1E3986FF21EFF2E9007E01FC /* wstring.h */,
 			);
-			path = distrom;
+			path = distorm;
 			sourceTree = "<group>";
 		};
-		1E1C636020F6A3940068B327 /* include */ = {
+		1E39870121EFF2E9007E01FC /* include */ = {
 			isa = PBXGroup;
 			children = (
-				1E1C636120F6A3940068B327 /* distorm.h */,
-				1E1C636220F6A3940068B327 /* mnemonics.h */,
+				1E39870221EFF2E9007E01FC /* distorm.h */,
+				1E39870321EFF2E9007E01FC /* mnemonics.h */,
 			);
-			name = include;
-			path = kemon/distorm/include;
-			sourceTree = SOURCE_ROOT;
+			path = include;
+			sourceTree = "<group>";
 		};
-		1E2CCE01206D8D8B000FBAB1 = {
+		1E63F94321E699C3007808E7 = {
 			isa = PBXGroup;
 			children = (
-				1E2CCE0D206D8D8B000FBAB1 /* kemon */,
-				1E2CCE0C206D8D8B000FBAB1 /* Products */,
+				1E63F94F21E699C3007808E7 /* kemon */,
+				1E63F94E21E699C3007808E7 /* Products */,
 			);
 			sourceTree = "<group>";
 		};
-		1E2CCE0C206D8D8B000FBAB1 /* Products */ = {
+		1E63F94E21E699C3007808E7 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				1E2CCE0B206D8D8B000FBAB1 /* kemon.kext */,
+				1E63F94D21E699C3007808E7 /* kemon.kext */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		1E2CCE0D206D8D8B000FBAB1 /* kemon */ = {
+		1E63F94F21E699C3007808E7 /* kemon */ = {
 			isa = PBXGroup;
 			children = (
-				1E1C635920F6A3740068B327 /* distrom */,
-				1E2CCE0E206D8D8B000FBAB1 /* kemon.c */,
-				1E2CCE16206D8E2C000FBAB1 /* kemon.h */,
-				1E9BA077209161A9001A9BB8 /* include.h */,
-				1E9EC6FB207448E300C61D80 /* trace.c */,
-				1E9EC6FA207448E300C61D80 /* trace.h */,
-				1E228D132081E44600F41461 /* nke.c */,
-				1E228D0E2081E44600F41461 /* nke.h */,
-				1E228D112081E44600F41461 /* network.c */,
-				1E228D0F2081E44600F41461 /* network.h */,
-				1E35F98520F82F330048103E /* inline.c */,
-				1E35F98620F82F330048103E /* inline.h */,
-				1E228D102081E44600F41461 /* policy.c */,
-				1E228D122081E44600F41461 /* policy.h */,
-				1E2CCE10206D8D8B000FBAB1 /* Info.plist */,
+				1E3986F921EFF2E9007E01FC /* distorm */,
+				1E63F95021E699C3007808E7 /* kemon.c */,
+				1E63F95821E6C31D007808E7 /* kemon.h */,
+				1E63F95A21E6C329007808E7 /* include.h */,
+				1EE8D53F21E6E5880087C63F /* trace.c */,
+				1EE8D53D21E6C8B40087C63F /* trace.h */,
+				1E39869B21EFF0E2007E01FC /* nke.c */,
+				1E39869F21EFF0E2007E01FC /* nke.h */,
+				1E39869A21EFF0E2007E01FC /* network.c */,
+				1E39869D21EFF0E2007E01FC /* network.h */,
+				1E0B856921E82A0B008F78F6 /* inline.c */,
+				1E0B856821E82A0B008F78F6 /* inline.h */,
+				1E39869E21EFF0E2007E01FC /* policy.c */,
+				1E39869C21EFF0E2007E01FC /* policy.h */,
+				1E63F95221E699C3007808E7 /* Info.plist */,
 			);
 			path = kemon;
 			sourceTree = "<group>";
@@ -168,42 +167,42 @@
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
-		1E2CCE08206D8D8B000FBAB1 /* Headers */ = {
+		1E63F94821E699C3007808E7 /* Headers */ = {
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				1E9EC6FC207448E300C61D80 /* trace.h in Headers */,
-				1E228D142081E44600F41461 /* nke.h in Headers */,
-				1E1C637620F6A3950068B327 /* mnemonics.h in Headers */,
-				1E1C637420F6A3950068B327 /* operands.h in Headers */,
-				1E9BA078209161A9001A9BB8 /* include.h in Headers */,
-				1E228D182081E44600F41461 /* policy.h in Headers */,
-				1E1C637520F6A3950068B327 /* distorm.h in Headers */,
-				1E1C637A20F6A3950068B327 /* x86defs.h in Headers */,
-				1E1C637320F6A3950068B327 /* prefix.h in Headers */,
-				1E1C638120F6A3950068B327 /* instructions.h in Headers */,
-				1E1C637920F6A3950068B327 /* config.h in Headers */,
-				1E2CCE17206D8E2C000FBAB1 /* kemon.h in Headers */,
-				1E228D152081E44600F41461 /* network.h in Headers */,
-				1E1C637F20F6A3950068B327 /* insts.h in Headers */,
-				1E1C637E20F6A3950068B327 /* wstring.h in Headers */,
-				1E35F98820F82F330048103E /* inline.h in Headers */,
-				1E1C637D20F6A3950068B327 /* textdefs.h in Headers */,
-				1E1C637C20F6A3950068B327 /* decoder.h in Headers */,
+				1EE8D53E21E6C8B40087C63F /* trace.h in Headers */,
+				1E3986A521EFF0E2007E01FC /* nke.h in Headers */,
+				1E39871221EFF2E9007E01FC /* config.h in Headers */,
+				1E39871421EFF2E9007E01FC /* wstring.h in Headers */,
+				1E39871A21EFF2E9007E01FC /* insts.h in Headers */,
+				1E0B856A21E82A0B008F78F6 /* inline.h in Headers */,
+				1E3986A221EFF0E2007E01FC /* policy.h in Headers */,
+				1E39871C21EFF2E9007E01FC /* textdefs.h in Headers */,
+				1E39871E21EFF2E9007E01FC /* instructions.h in Headers */,
+				1E39871B21EFF2E9007E01FC /* x86defs.h in Headers */,
+				1E39871821EFF2E9007E01FC /* decoder.h in Headers */,
+				1E39871721EFF2E9007E01FC /* mnemonics.h in Headers */,
+				1E39872121EFF2E9007E01FC /* prefix.h in Headers */,
+				1E39871621EFF2E9007E01FC /* distorm.h in Headers */,
+				1E39871121EFF2E9007E01FC /* operands.h in Headers */,
+				1E3986A321EFF0E2007E01FC /* network.h in Headers */,
+				1E63F95921E6C31D007808E7 /* kemon.h in Headers */,
+				1E63F95B21E6C329007808E7 /* include.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
-		1E2CCE0A206D8D8B000FBAB1 /* kemon */ = {
+		1E63F94C21E699C3007808E7 /* kemon */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 1E2CCE13206D8D8B000FBAB1 /* Build configuration list for PBXNativeTarget "kemon" */;
+			buildConfigurationList = 1E63F95521E699C3007808E7 /* Build configuration list for PBXNativeTarget "kemon" */;
 			buildPhases = (
-				1E2CCE06206D8D8B000FBAB1 /* Sources */,
-				1E2CCE07206D8D8B000FBAB1 /* Frameworks */,
-				1E2CCE08206D8D8B000FBAB1 /* Headers */,
-				1E2CCE09206D8D8B000FBAB1 /* Resources */,
+				1E63F94821E699C3007808E7 /* Headers */,
+				1E63F94921E699C3007808E7 /* Sources */,
+				1E63F94A21E699C3007808E7 /* Frameworks */,
+				1E63F94B21E699C3007808E7 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -211,43 +210,42 @@
 			);
 			name = kemon;
 			productName = kemon;
-			productReference = 1E2CCE0B206D8D8B000FBAB1 /* kemon.kext */;
+			productReference = 1E63F94D21E699C3007808E7 /* kemon.kext */;
 			productType = "com.apple.product-type.kernel-extension";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		1E2CCE02206D8D8B000FBAB1 /* Project object */ = {
+		1E63F94421E699C3007808E7 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 0930;
+				LastUpgradeCheck = 1010;
 				ORGANIZATIONNAME = "Yu Wang";
 				TargetAttributes = {
-					1E2CCE0A206D8D8B000FBAB1 = {
-						CreatedOnToolsVersion = 9.2;
-						ProvisioningStyle = Automatic;
+					1E63F94C21E699C3007808E7 = {
+						CreatedOnToolsVersion = 10.1;
 					};
 				};
 			};
-			buildConfigurationList = 1E2CCE05206D8D8B000FBAB1 /* Build configuration list for PBXProject "kemon" */;
-			compatibilityVersion = "Xcode 8.0";
+			buildConfigurationList = 1E63F94721E699C3007808E7 /* Build configuration list for PBXProject "kemon" */;
+			compatibilityVersion = "Xcode 9.3";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
 			);
-			mainGroup = 1E2CCE01206D8D8B000FBAB1;
-			productRefGroup = 1E2CCE0C206D8D8B000FBAB1 /* Products */;
+			mainGroup = 1E63F94321E699C3007808E7;
+			productRefGroup = 1E63F94E21E699C3007808E7 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				1E2CCE0A206D8D8B000FBAB1 /* kemon */,
+				1E63F94C21E699C3007808E7 /* kemon */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		1E2CCE09206D8D8B000FBAB1 /* Resources */ = {
+		1E63F94B21E699C3007808E7 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -257,32 +255,32 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		1E2CCE06206D8D8B000FBAB1 /* Sources */ = {
+		1E63F94921E699C3007808E7 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				1E228D192081E44600F41461 /* nke.c in Sources */,
-				1E2CCE0F206D8D8B000FBAB1 /* kemon.c in Sources */,
-				1E1C637720F6A3950068B327 /* operands.c in Sources */,
-				1E1C638020F6A3950068B327 /* insts.c in Sources */,
-				1E1C637020F6A3950068B327 /* textdefs.c in Sources */,
-				1E1C637B20F6A3950068B327 /* mnemonics.c in Sources */,
-				1E228D162081E44600F41461 /* policy.c in Sources */,
-				1E1C636F20F6A3950068B327 /* decoder.c in Sources */,
-				1E35F98720F82F330048103E /* inline.c in Sources */,
-				1E1C637220F6A3950068B327 /* prefix.c in Sources */,
-				1E1C637820F6A3950068B327 /* instructions.c in Sources */,
-				1E9EC6FD207448E300C61D80 /* trace.c in Sources */,
-				1E1C637120F6A3950068B327 /* distorm.c in Sources */,
-				1E1C638220F6A3950068B327 /* wstring.c in Sources */,
-				1E228D172081E44600F41461 /* network.c in Sources */,
+				1E3986A021EFF0E2007E01FC /* network.c in Sources */,
+				1E39871521EFF2E9007E01FC /* mnemonics.c in Sources */,
+				1E39871F21EFF2E9007E01FC /* decoder.c in Sources */,
+				1E3986A421EFF0E2007E01FC /* policy.c in Sources */,
+				1E39871021EFF2E9007E01FC /* textdefs.c in Sources */,
+				1E39871921EFF2E9007E01FC /* distorm.c in Sources */,
+				1E39872221EFF2E9007E01FC /* insts.c in Sources */,
+				1E39870F21EFF2E9007E01FC /* instructions.c in Sources */,
+				1E63F95121E699C3007808E7 /* kemon.c in Sources */,
+				1E39871D21EFF2E9007E01FC /* operands.c in Sources */,
+				1E39871321EFF2E9007E01FC /* prefix.c in Sources */,
+				1E39872021EFF2E9007E01FC /* wstring.c in Sources */,
+				1EE8D54021E6E5880087C63F /* trace.c in Sources */,
+				1E3986A121EFF0E2007E01FC /* nke.c in Sources */,
+				1E0B856B21E82A0B008F78F6 /* inline.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
-		1E2CCE11206D8D8B000FBAB1 /* Debug */ = {
+		1E63F95321E699C3007808E7 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -292,6 +290,7 @@
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
 				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
 				CLANG_WARN_BOOL_CONVERSION = YES;
 				CLANG_WARN_COMMA = YES;
@@ -315,7 +314,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_IDENTITY = "-";
 				COPY_PHASE_STRIP = NO;
-				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -332,14 +331,15 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MTL_ENABLE_DEBUG_INFO = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
 			};
 			name = Debug;
 		};
-		1E2CCE12206D8D8B000FBAB1 /* Release */ = {
+		1E63F95421E699C3007808E7 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -349,6 +349,7 @@
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
 				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
 				CLANG_WARN_BOOL_CONVERSION = YES;
 				CLANG_WARN_COMMA = YES;
@@ -375,7 +376,6 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -384,49 +384,49 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
 				MTL_ENABLE_DEBUG_INFO = NO;
-				ONLY_ACTIVE_ARCH = YES;
+				MTL_FAST_MATH = YES;
 				SDKROOT = macosx;
 			};
 			name = Release;
 		};
-		1E2CCE14206D8D8B000FBAB1 /* Debug */ = {
+		1E63F95621E699C3007808E7 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_STATIC_ANALYZER_MODE = deep;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = NO;
 				CODE_SIGN_IDENTITY = "";
 				CODE_SIGN_STYLE = Automatic;
-				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_TEAM = "";
 				INFOPLIST_FILE = kemon/Info.plist;
-				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
 				MODULE_NAME = com.assuresec.kemon;
 				MODULE_START = kemon_start;
 				MODULE_STOP = kemon_stop;
-				MODULE_VERSION = 1.0.0.1001;
+				MODULE_VERSION = 1.0.0.1010;
 				PRODUCT_BUNDLE_IDENTIFIER = com.assuresec.kemon;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE_SPECIFIER = "";
+				RUN_CLANG_STATIC_ANALYZER = YES;
 				WRAPPER_EXTENSION = kext;
 			};
 			name = Debug;
 		};
-		1E2CCE15206D8D8B000FBAB1 /* Release */ = {
+		1E63F95721E699C3007808E7 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_STATIC_ANALYZER_MODE = deep;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = NO;
 				CODE_SIGN_IDENTITY = "";
 				CODE_SIGN_STYLE = Automatic;
-				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_TEAM = "";
 				INFOPLIST_FILE = kemon/Info.plist;
-				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
 				MODULE_NAME = com.assuresec.kemon;
 				MODULE_START = kemon_start;
 				MODULE_STOP = kemon_stop;
-				MODULE_VERSION = 1.0.0.1001;
+				MODULE_VERSION = 1.0.0.1010;
 				PRODUCT_BUNDLE_IDENTIFIER = com.assuresec.kemon;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE_SPECIFIER = "";
+				RUN_CLANG_STATIC_ANALYZER = YES;
 				WRAPPER_EXTENSION = kext;
 			};
 			name = Release;
@@ -434,25 +434,25 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		1E2CCE05206D8D8B000FBAB1 /* Build configuration list for PBXProject "kemon" */ = {
+		1E63F94721E699C3007808E7 /* Build configuration list for PBXProject "kemon" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				1E2CCE11206D8D8B000FBAB1 /* Debug */,
-				1E2CCE12206D8D8B000FBAB1 /* Release */,
+				1E63F95321E699C3007808E7 /* Debug */,
+				1E63F95421E699C3007808E7 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		1E2CCE13206D8D8B000FBAB1 /* Build configuration list for PBXNativeTarget "kemon" */ = {
+		1E63F95521E699C3007808E7 /* Build configuration list for PBXNativeTarget "kemon" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				1E2CCE14206D8D8B000FBAB1 /* Debug */,
-				1E2CCE15206D8D8B000FBAB1 /* Release */,
+				1E63F95621E699C3007808E7 /* Debug */,
+				1E63F95721E699C3007808E7 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
-	rootObject = 1E2CCE02206D8D8B000FBAB1 /* Project object */;
+	rootObject = 1E63F94421E699C3007808E7 /* Project object */;
 }

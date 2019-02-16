@@ -8,4 +8,3 @@ build:
 clean:
 	$(CC) clean -project $(XCODE_PROJECT) -configuration Debug
 	$(CC) clean -project $(XCODE_PROJECT) -configuration Release
-	rm -r build

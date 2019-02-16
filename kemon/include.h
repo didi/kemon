@@ -25,8 +25,7 @@ Revision History:
 // macOS version
 //
 
-enum os_version
-{
+enum os_version {
     OS_X_LION = 0xB,
     OS_X_MOUNTAIN_LION,
     OS_X_MAVERICKS,
@@ -41,8 +40,7 @@ enum os_version
 // Message type
 //
 
-enum message_type
-{
+enum message_type {
     FILEOP_OPEN = 0x00,
     FILEOP_CREATE,
     FILEOP_CLOSE,
@@ -51,8 +49,8 @@ enum message_type
     FILEOP_LINK,
     FILEOP_EXEC,
     FILEOP_DELETE,
-    FILEOP_WRITE_OR_APPEND,
     FILEOP_WILL_RENAME,
+    FILEOP_WRITE_OR_APPEND,
     DEVICE_OPEN = 0x20,
     NETWORK_TCP_IPV4_DETACH = 0x40,
     NETWORK_UDP_IPV4_DETACH,
@@ -66,8 +64,7 @@ enum message_type
 // Message header
 //
 
-struct message_header
-{
+struct message_header {
     int type;
     int pid;
     int ppid;
@@ -82,60 +79,47 @@ struct message_header
 // File operation monitoring
 //
 
-struct file_operation_monitoring
-{
+struct file_operation_monitoring {
     struct message_header header;
-    union
-    {
-        struct
-        {
+    union {
+        struct {
             char path[MAXPATHLEN];
         } fileop_open;
-        struct
-        {
+        struct {
             char path[MAXPATHLEN];
         } fileop_create;
-        struct
-        {
+        struct {
             char path[MAXPATHLEN];
             boolean_t modified;
         } fileop_close;
-        struct
-        {
+        struct {
             char from[MAXPATHLEN];
             char to[MAXPATHLEN];
         } fileop_rename;
-        struct
-        {
+        struct {
             char file1[MAXPATHLEN];
             char file2[MAXPATHLEN];
         } fileop_exchange;
-        struct
-        {
+        struct {
             char original[MAXPATHLEN];
             char new_link[MAXPATHLEN];
         } fileop_link;
-        struct
-        {
+        struct {
             char path[MAXPATHLEN];
             unsigned long command_line_length;
-        //  char command_line_data[command_line_length];
+        //  char command_line[command_line_length];
         } fileop_exec;
-        struct
-        {
+        struct {
             char path[MAXPATHLEN];
         } fileop_delete;
-        struct
-        {
+        struct {
             char from[MAXPATHLEN];
             char to[MAXPATHLEN];
         } fileop_will_rename;
-        struct
-        {
+        struct {
             char path[MAXPATHLEN];
         } fileop_write_or_append;
-        struct
-        {
+        struct {
             char path[MAXPATHLEN];
         } device_open;
     } body;
@@ -145,8 +129,7 @@ struct file_operation_monitoring
 // Network traffic monitoring
 //
 
-struct network_tcp_monitoring
-{
+struct network_tcp_monitoring {
     struct message_header header;
     struct timeval start_time;
     struct timeval stop_time;
@@ -160,14 +143,13 @@ struct network_tcp_monitoring
     uint32_t in_packets;
     uint32_t out_bytes;
     uint32_t out_packets;
-    uint32_t first_in_packet_size;
-    uint32_t first_out_packet_size;
-//  char first_in_packet_data[first_in_packet_size];
-//  char first_out_packet_data[first_out_packet_size];
+    uint32_t first_in_bytes;
+    uint32_t first_out_bytes;
+//  char first_in_packet[first_in_bytes];
+//  char first_out_packet[first_out_bytes];
 };
 
-struct network_udp_monitoring
-{
+struct network_udp_monitoring {
     struct message_header header;
     struct timeval start_time;
     struct timeval stop_time;
@@ -179,23 +161,21 @@ struct network_udp_monitoring
     uint16_t destination_port;
 };
 
-struct network_dns_monitoring
-{
+struct network_dns_monitoring {
     struct message_header header;
     u_char source_address_string[256];
     u_char destination_address_string[256];
     uint16_t source_port;
     uint16_t destination_port;
     unsigned long dns_question_length;
-//  char dns_question_data[dns_question_length];
+//  char dns_question[dns_question_length];
 };
 
 //
 // Dynamic library monitoring
 //
 
-struct dynamic_library_monitoring
-{
+struct dynamic_library_monitoring {
     struct message_header header;
     char library_path[MAXPATHLEN];
 };
@@ -204,8 +184,7 @@ struct dynamic_library_monitoring
 // Kernel module monitoring
 //
 
-struct kernel_module_monitoring
-{
+struct kernel_module_monitoring {
     struct message_header header;
     unsigned int return_value;
     unsigned long module_base;

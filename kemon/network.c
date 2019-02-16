@@ -19,14 +19,13 @@ Revision History:
 #include <netinet/tcp.h>
 #include <netinet/udp.h>
 #include <kern/assert.h>
-#include <mach/mach_types.h>
 #include <libkern/libkern.h>
-#include <libkern/OSMalloc.h>
 #include <libkern/OSAtomic.h>
+#include <libkern/OSMalloc.h>
 #include <sys/kpi_socketfilter.h>
 #include <sys/kpi_mbuf.h>
-#include <sys/systm.h>
 #include <sys/kauth.h>
+#include <sys/systm.h>
 #include "include.h"
 #include "nke.h"
 #include "trace.h"
@@ -37,23 +36,26 @@ Revision History:
 // Socket filter mutex lock
 //
 
-lck_mtx_t *gnetwork_filter_lock = NULL;
+static lck_mtx_t *sflt_lock;
 
 #ifdef NDEBUG
-#   define get_entry_from_cookie(cookie) ((struct log_entry *) cookie)
+#   define get_entry_from_cookie(cookie) (cookie)
 #else
-    static struct log_entry *get_entry_from_cookie(void *cookie)
+    static
+    struct sflt_log_entry *
+    get_entry_from_cookie(
+        void *cookie
+        )
     {
-        struct log_entry *result = (struct log_entry *) cookie;
+        struct sflt_log_entry *result = cookie;
 
         assert (result);
-
         return result;
     }
 #endif
 
 //
-// sflt_filter.sflt_unregistered_func is called to notify the filter it has been unregistered.
+// sflt_filter.sflt_unregistered_func is called to notify the filter it has been unregistered
 //
 
 static
@@ -62,40 +64,43 @@ sflt_unregistered(
     sflt_handle handle
     )
 {
-    if (SFLT_TCP_IPV4_HANDLE == handle)
-    {
-        OSCompareAndSwap(1, 0, &gfilter_stats.tcp_ipv4_registered);
+    if (SFLT_TCP_IPV4_HANDLE == handle) {
+        OSCompareAndSwap(1, 0,
+                         &filter_stats.tcp_ipv4_registered);
 
     #if SFLT_TROUBLESHOOTING
         printf("[%s.kext] : Socket filter for TCP IPv4 was unregistered (tcp_ipv4_in_use=%d, tcp_ipv4_total=%d).\n",
-               DRIVER_NAME, gfilter_stats.tcp_ipv4_in_use, gfilter_stats.tcp_ipv4_total);
+               DRIVER_NAME,
+               filter_stats.tcp_ipv4_in_use,
+               filter_stats.tcp_ipv4_total);
     #endif
-    }
-    else if (SFLT_UDP_IPV4_HANDLE == handle)
-    {
-        OSCompareAndSwap(1, 0, &gfilter_stats.udp_ipv4_registered);
+    } else if (SFLT_UDP_IPV4_HANDLE == handle) {
+        OSCompareAndSwap(1, 0,
+                         &filter_stats.udp_ipv4_registered);
 
     #if SFLT_TROUBLESHOOTING
         printf("[%s.kext] : Socket filter for UDP IPv4 was unregistered (udp_ipv4_in_use=%d, udp_ipv4_total=%d).\n",
-               DRIVER_NAME, gfilter_stats.udp_ipv4_in_use, gfilter_stats.udp_ipv4_total);
+               DRIVER_NAME,
+               filter_stats.udp_ipv4_in_use,
+               filter_stats.udp_ipv4_total);
     #endif
     }
 }
 
 //
-// sflt_attach_func_locked is called by sflt_attach_func to initialize internal memory structures.
-// Assumption that the fine grain lock associated with the glist_active queue is held
-// so that the queue entry can be inserted atomically.
+// sflt_attach_func_locked is called by sflt_attach_func to initialize internal memory structures
+// Assumption that the fine grain lock associated with the sflt_active_list queue is held
+// so that the queue entry can be inserted atomically
 //
 
 static
 void
 sflt_attach_locked(
-    struct log_entry *entry,
+    struct sflt_log_entry *entry,
     socket_t socket
     )
 {
-    memset(entry, 0, sizeof(struct log_entry));
+    memset(entry, 0, sizeof(*entry));
 
     //
     // Record start time
@@ -109,19 +114,20 @@ sflt_attach_locked(
 
     entry->info.pid = proc_selfpid();
     entry->info.uid = kauth_getuid();
-    entry->info.length = sizeof(struct log_entry);
+    entry->info.length = sizeof(*entry);
 
     entry->socket = socket;
 
-    TAILQ_INSERT_TAIL(&glist_active, entry, next);
+    TAILQ_INSERT_TAIL(&sflt_active_list,
+                      entry, list);
 }
 
 //
-// sflt_filter.sflt_attach_func is called to notify the filter it has been attached to a new TCP socket.
+// sflt_filter.sflt_attach_func is called to notify the filter it has been attached to a new TCP socket
 // This filter is called in one of two cases:
-//   (1) You've installed a global filter and a new socket was created.
-//   (2) Your non-global socket filter is being attached using the SO_NKE socket option.
-// If the filter allocated any memory for this attachment, it should be freed.
+//   (1) You've installed a global filter and a new socket was created
+//   (2) Your non-global socket filter is being attached using the SO_NKE socket option
+// If the filter allocated any memory for this attachment, it should be freed
 //
 
 static
@@ -132,21 +138,20 @@ sflt_attach_tcp_ipv4(
     )
 {
     errno_t result = 0;
-    struct log_entry *entry = NULL;
+    struct sflt_log_entry *entry;
 
-    if (gfilter_stats.filter_enabled)
-    {
-        entry = (struct log_entry *) OSMalloc(sizeof(struct log_entry), gmalloc_tag);
+    if (filter_stats.filter_enabled) {
+        entry = OSMalloc(sizeof(*entry), gmalloc_tag);
 
         //
         // Save the log entry as the cookie associated with this socket
         //
 
-        *(struct log_entry **) cookie = entry;
+        *(struct sflt_log_entry **) cookie = entry;
 
         if (!entry) return ENOBUFS;
 
-        lck_mtx_lock(gnetwork_filter_lock);
+        lck_mtx_lock(sflt_lock);
 
         sflt_attach_locked(entry, socket);
 
@@ -162,13 +167,11 @@ sflt_attach_tcp_ipv4(
 
         entry->tcp_ipv4_attached = TRUE;
 
-        OSIncrementAtomic(&(gfilter_stats.tcp_ipv4_total));
-        OSIncrementAtomic(&(gfilter_stats.tcp_ipv4_in_use));
+        OSIncrementAtomic(&(filter_stats.tcp_ipv4_total));
+        OSIncrementAtomic(&(filter_stats.tcp_ipv4_in_use));
 
-        lck_mtx_unlock(gnetwork_filter_lock);
-    }
-    else
-    {
+        lck_mtx_unlock(sflt_lock);
+    } else {
         *cookie = NULL;
 
         //
@@ -182,11 +185,11 @@ sflt_attach_tcp_ipv4(
 }
 
 //
-// sflt_filter.sflt_attach_func is called to notify the filter it has been attached to a new UDP socket.
+// sflt_filter.sflt_attach_func is called to notify the filter it has been attached to a new UDP socket
 // This filter is called in one of two cases:
-//   (1) You've installed a global filter and a new socket was created.
-//   (2) Your non-global socket filter is being attached using the SO_NKE socket option.
-// If the filter allocated any memory for this attachment, it should be freed.
+//   (1) You've installed a global filter and a new socket was created
+//   (2) Your non-global socket filter is being attached using the SO_NKE socket option
+// If the filter allocated any memory for this attachment, it should be freed
 //
 
 static
@@ -197,21 +200,20 @@ sflt_attach_udp_ipv4(
     )
 {
     errno_t result = 0;
-    struct log_entry *entry = NULL;
+    struct sflt_log_entry *entry;
 
-    if (gfilter_stats.filter_enabled)
-    {
-        entry = (struct log_entry *) OSMalloc(sizeof(struct log_entry), gmalloc_tag);
+    if (filter_stats.filter_enabled) {
+        entry = OSMalloc(sizeof(*entry), gmalloc_tag);
 
         //
         // Save the log entry as the cookie associated with this socket
         //
 
-        *(struct log_entry **) cookie = entry;
+        *(struct sflt_log_entry **) cookie = entry;
 
         if (!entry) return ENOBUFS;
 
-        lck_mtx_lock(gnetwork_filter_lock);
+        lck_mtx_lock(sflt_lock);
 
         sflt_attach_locked(entry, socket);
 
@@ -227,13 +229,11 @@ sflt_attach_udp_ipv4(
 
         entry->udp_ipv4_attached = TRUE;
 
-        OSIncrementAtomic(&(gfilter_stats.udp_ipv4_total));
-        OSIncrementAtomic(&(gfilter_stats.udp_ipv4_in_use));
+        OSIncrementAtomic(&(filter_stats.udp_ipv4_total));
+        OSIncrementAtomic(&(filter_stats.udp_ipv4_in_use));
 
-        lck_mtx_unlock(gnetwork_filter_lock);
-    }
-    else
-    {
+        lck_mtx_unlock(sflt_lock);
+    } else {
         *cookie = NULL;
 
         //
@@ -247,42 +247,47 @@ sflt_attach_udp_ipv4(
 }
 
 //
-// Removes the target item from the glist_inactive list.
+// Removes the target item from the sflt_inactive_list
 //
 
 static
 void
 sflt_remove(
-    struct log_entry *entry
+    struct sflt_log_entry *entry
     )
 {
-    TAILQ_REMOVE(&glist_inactive, entry, next);
+    TAILQ_REMOVE(&sflt_inactive_list,
+                 entry, list);
 
-    if (entry->info.first_in_packet_data)
-    {
-        OSFree(entry->info.first_in_packet_data, entry->info.first_in_packet_size, gmalloc_tag);
+    if (entry->info.first_in_packet) {
+        OSFree(entry->info.first_in_packet,
+               entry->info.first_in_bytes,
+               gmalloc_tag);
 
-        entry->info.first_in_packet_data = NULL;
+        entry->info.first_in_packet = NULL;
     }
 
-    if (entry->info.first_out_packet_data)
-    {
-        OSFree(entry->info.first_out_packet_data, entry->info.first_out_packet_size, gmalloc_tag);
+    if (entry->info.first_out_packet) {
+        OSFree(entry->info.first_out_packet,
+               entry->info.first_out_bytes,
+               gmalloc_tag);
 
-        entry->info.first_out_packet_data = NULL;
+        entry->info.first_out_packet = NULL;
     }
 
     if (entry->tcp_ipv4_attached)
-        OSDecrementAtomic(&(gfilter_stats.tcp_ipv4_in_use));
+        OSDecrementAtomic(&(filter_stats.tcp_ipv4_in_use));
     else if (entry->udp_ipv4_attached)
-        OSDecrementAtomic(&(gfilter_stats.udp_ipv4_in_use));
+        OSDecrementAtomic(&(filter_stats.udp_ipv4_in_use));
 
-    OSFree(entry, sizeof(struct log_entry), gmalloc_tag);
+    OSFree(entry, sizeof(*entry),
+           gmalloc_tag);
 }
 
 //
-// Clears log_entries from the glist_inactive list.
-// Set 'all' to true when you want to flush the glist_active entries as well as the memory entries in the glist_inactive queue.
+// Clears log_entries from the sflt_inactive_list
+// Set 'all' to true when you want to flush the sflt_active_list entries
+// as well as the memory entries in the sflt_inactive_list queue
 //
 
 static
@@ -291,40 +296,42 @@ sflt_remove_all(
     boolean_t all
     )
 {
-    struct log_entry *entry = NULL, *next = NULL;
+    struct sflt_log_entry *entry, *next = NULL;
 
-    lck_mtx_lock(gnetwork_filter_lock);
+    lck_mtx_lock(sflt_lock);
 
-    if (all)
-    {
+    if (all) {
         //
-        // Move all entries into the glist_inactive queue
+        // Move all entries into the sflt_inactive_list queue
         //
 
-        for (entry = TAILQ_FIRST(&glist_active); entry; entry = next)
-        {
-            next = TAILQ_NEXT(entry, next);
+        for (entry = TAILQ_FIRST(&sflt_active_list);
+             entry; entry = next) {
+            next = TAILQ_NEXT(entry, list);
 
-            TAILQ_REMOVE(&glist_active, entry, next);
+            TAILQ_REMOVE(&sflt_active_list,
+                         entry, list);
 
-            TAILQ_INSERT_TAIL(&glist_inactive, entry, next);
+            entry->detached = TRUE;
 
-            entry->detach = TRUE;
+            TAILQ_INSERT_TAIL(&sflt_inactive_list,
+                              entry, list);
         }
     }
 
-    for (entry = TAILQ_FIRST(&glist_inactive); entry; entry = next)
-    {
-        next = TAILQ_NEXT(entry, next);
+    for (entry = TAILQ_FIRST(&sflt_inactive_list);
+         entry; entry = next) {
+        next = TAILQ_NEXT(entry, list);
 
         sflt_remove(entry);
     }
 
-    lck_mtx_unlock(gnetwork_filter_lock);
+    lck_mtx_unlock(sflt_lock);
 }
 
 //
-// Used to send information to the registered client iterates through all log_entries in the glist_inactive queue.
+// Used to send information to the registered client
+// iterates through all log_entries in the sflt_inactive_list queue
 //
 
 static
@@ -332,37 +339,39 @@ void
 sflt_cleanup(
     )
 {
-    struct log_entry *entry = NULL, *next = NULL;
+    struct sflt_log_entry *entry, *next = NULL;
 
-    lck_mtx_lock(gnetwork_filter_lock);
+    lck_mtx_lock(sflt_lock);
 
-    for (entry = TAILQ_FIRST(&glist_inactive); entry; entry = next)
-    {
-        next = TAILQ_NEXT(entry, next);
+    for (entry = TAILQ_FIRST(&sflt_inactive_list);
+         entry; entry = next) {
+        next = TAILQ_NEXT(entry, list);
 
         sflt_remove(entry);
     }
 
-    lck_mtx_unlock(gnetwork_filter_lock);
+    lck_mtx_unlock(sflt_lock);
 }
 
 //
-// sflt_detach_func_locked is called by sflt_detach_func.
+// sflt_detach_func_locked is called by sflt_detach_func
 //
 
 static
 void
 sflt_detach_locked(
-    struct log_entry *entry
+    struct sflt_log_entry *entry
     )
 {
-    TAILQ_REMOVE(&glist_active, entry, next);
+    TAILQ_REMOVE(&sflt_active_list,
+                 entry, list);
 
-    TAILQ_INSERT_TAIL(&glist_inactive, entry, next);
+    TAILQ_INSERT_TAIL(&sflt_inactive_list,
+                      entry, list);
 }
 
 //
-// sflt_filter.sflt_detach_func is called to notify the filter it has been detached from a socket.
+// sflt_filter.sflt_detach_func is called to notify the filter it has been detached from a socket
 //
 
 static
@@ -372,12 +381,14 @@ sflt_detach_ipv4(
     socket_t socket
     )
 {
-    void *src_address = NULL, *dst_address = NULL;
-    struct log_entry *entry = get_entry_from_cookie(cookie);
+    struct sflt_log_entry *entry;
+    void *src_address, *dst_address;
 
-    if (!entry) return;
+    entry = get_entry_from_cookie(cookie);
+    if (!entry)
+        return;
 
-    entry->detach = TRUE;
+    entry->detached = TRUE;
 
     //
     // Record stop time
@@ -385,26 +396,26 @@ sflt_detach_ipv4(
 
     microtime(&(entry->info.stop));
 
-    boolean_t tcp_attached = entry->tcp_ipv4_attached, udp_attached = entry->udp_ipv4_attached;
+    boolean_t tcp_attached = entry->tcp_ipv4_attached;
+    boolean_t udp_attached = entry->udp_ipv4_attached;
 
     //
-    // Notify user mode client
+    // Tell the user about this request
     //
 
-    if (AF_INET == entry->protocol && tcp_attached)
-    {
-        struct network_tcp_monitoring *message = NULL;
-        uint32_t first_in_size = 0, first_out_size = 0, total_size = 0;
+    if (AF_INET == entry->protocol &&
+        tcp_attached) {
+        struct network_tcp_monitoring *message;
+        uint32_t first_in_bytes, first_out_bytes, total_bytes;
 
-        first_in_size = entry->info.first_in_packet_size;
-        first_out_size = entry->info.first_out_packet_size;
-        total_size = sizeof(struct network_tcp_monitoring) + first_in_size + first_out_size;
+        first_in_bytes = entry->info.first_in_bytes;
+        first_out_bytes = entry->info.first_out_bytes;
+        total_bytes = sizeof(*message) +
+            first_in_bytes + first_out_bytes;
 
-        message = (struct network_tcp_monitoring *) OSMalloc(total_size, gmalloc_tag);
-
-        if (message)
-        {
-            memset(message, 0, total_size);
+        message = OSMalloc(total_bytes, gmalloc_tag);
+        if (message) {
+            memset(message, 0, total_bytes);
 
             //
             // Message header
@@ -413,11 +424,23 @@ sflt_detach_ipv4(
             message->header.event_time = entry->info.stop;
             message->header.type = NETWORK_TCP_IPV4_DETACH;
 
+            size_t name_length = strlen("NULL (ZOMBIE STATE)");
+            memcpy(message->header.proc_name_pid,
+                   "NULL (ZOMBIE STATE)",
+                   name_length);
+            memcpy(message->header.proc_name_ppid,
+                   "NULL (ZOMBIE STATE)",
+                   name_length);
+
             message->header.pid = entry->info.pid;
-            proc_name(message->header.pid, message->header.proc_name_pid, MAXPATHLEN);
+            proc_name(message->header.pid,
+                      message->header.proc_name_pid,
+                      MAXPATHLEN);
 
             message->header.ppid = proc_selfppid();
-            proc_name(message->header.ppid, message->header.proc_name_ppid, MAXPATHLEN);
+            proc_name(message->header.ppid,
+                      message->header.proc_name_ppid,
+                      MAXPATHLEN);
 
             message->header.uid = entry->info.uid;
             message->header.gid = kauth_getgid();
@@ -430,22 +453,34 @@ sflt_detach_ipv4(
             message->stop_time = entry->info.stop;
 
             src_address = &(entry->info.source.addr4.sin_addr);
-            inet_ntop(entry->protocol, src_address, (char *) message->source_address_string, sizeof(message->source_address_string));
+            inet_ntop(entry->protocol,
+                      src_address,
+                      (char *) message->source_address_string,
+                      sizeof(message->source_address_string));
 
             dst_address = &(entry->info.destination.addr4.sin_addr);
-            inet_ntop(entry->protocol, dst_address, (char *) message->destination_address_string, sizeof(message->destination_address_string));
+            inet_ntop(entry->protocol,
+                      dst_address,
+                      (char *) message->destination_address_string,
+                      sizeof(message->destination_address_string));
 
             //
             // If we have received the notification from sock_evt_connecting and sock_evt_connected
             //
 
-            message->source_address_ether[0] = entry->info.ether_shost[0]; message->source_address_ether[1] = entry->info.ether_shost[1];
-            message->source_address_ether[2] = entry->info.ether_shost[2]; message->source_address_ether[3] = entry->info.ether_shost[3];
-            message->source_address_ether[4] = entry->info.ether_shost[4]; message->source_address_ether[5] = entry->info.ether_shost[5];
+            message->source_address_ether[0] = entry->info.ether_shost[0];
+            message->source_address_ether[1] = entry->info.ether_shost[1];
+            message->source_address_ether[2] = entry->info.ether_shost[2];
+            message->source_address_ether[3] = entry->info.ether_shost[3];
+            message->source_address_ether[4] = entry->info.ether_shost[4];
+            message->source_address_ether[5] = entry->info.ether_shost[5];
 
-            message->destination_address_ether[0] = entry->info.ether_dhost[0]; message->destination_address_ether[1] = entry->info.ether_dhost[1];
-            message->destination_address_ether[2] = entry->info.ether_dhost[2]; message->destination_address_ether[3] = entry->info.ether_dhost[3];
-            message->destination_address_ether[4] = entry->info.ether_dhost[4]; message->destination_address_ether[5] = entry->info.ether_dhost[5];
+            message->destination_address_ether[0] = entry->info.ether_dhost[0];
+            message->destination_address_ether[1] = entry->info.ether_dhost[1];
+            message->destination_address_ether[2] = entry->info.ether_dhost[2];
+            message->destination_address_ether[3] = entry->info.ether_dhost[3];
+            message->destination_address_ether[4] = entry->info.ether_dhost[4];
+            message->destination_address_ether[5] = entry->info.ether_dhost[5];
 
             message->source_port = entry->info.source.addr4.sin_port;
             message->destination_port = entry->info.destination.addr4.sin_port;
@@ -454,54 +489,71 @@ sflt_detach_ipv4(
             message->in_packets = entry->info.in_packets;
             message->out_bytes = entry->info.out_bytes;
             message->out_packets = entry->info.out_packets;
-            message->first_in_packet_size = first_in_size;
-            message->first_out_packet_size = first_out_size;
+            message->first_in_bytes = first_in_bytes;
+            message->first_out_bytes = first_out_bytes;
 
             //
             // The remaining part
             //
 
-            char *first_in_offset = (char *) message + sizeof(struct network_tcp_monitoring);
-            char *first_out_offset = (char *) message + sizeof(struct network_tcp_monitoring) + first_in_size;
+            char *first_in_offset = (char *) (message + 1);
+            char *first_out_offset = (char *) (message + 1) + first_in_bytes;
 
-            if (first_in_size && entry->info.first_in_packet_data)
-                memcpy(first_in_offset, entry->info.first_in_packet_data, first_in_size);
+            if (first_in_bytes &&
+                entry->info.first_in_packet)
+                memcpy(first_in_offset,
+                       entry->info.first_in_packet,
+                       first_in_bytes);
 
-            if (first_out_size && entry->info.first_out_packet_data)
-                memcpy(first_out_offset, entry->info.first_out_packet_data, first_out_size);
+            if (first_out_bytes &&
+                entry->info.first_out_packet)
+                memcpy(first_out_offset,
+                       entry->info.first_out_packet,
+                       first_out_bytes);
 
             send_message((struct message_header *) message);
 
-            OSFree(message, total_size, gmalloc_tag);
+            OSFree(message, total_bytes, gmalloc_tag);
         }
-    }
-    else if (AF_INET == entry->protocol && udp_attached)
-    {
+    } else if (AF_INET == entry->protocol &&
+               udp_attached) {
         //
         // We don't care about udp detach traffic in this version
         //
+
+        ;
     }
 
-    lck_mtx_lock(gnetwork_filter_lock);
+    //
+    // Cleanup
+    //
+
+    lck_mtx_lock(sflt_lock);
 
     sflt_detach_locked(entry);
 
-    lck_mtx_unlock(gnetwork_filter_lock);
+    lck_mtx_unlock(sflt_lock);
 
     sflt_cleanup();
 
 #if SFLT_TRAFFIC_TROUBLESHOOTING
     if (tcp_attached)
         printf("[%s.kext] : sflt_detach_ipv4(%s - socket=0x%X), %d/%d.\n",
-               DRIVER_NAME, "tcp_ipv4", (unsigned int) socket, gfilter_stats.tcp_ipv4_in_use, gfilter_stats.tcp_ipv4_total);
+               DRIVER_NAME, "tcp_ipv4",
+               (unsigned int) socket,
+               filter_stats.tcp_ipv4_in_use,
+               filter_stats.tcp_ipv4_total);
     else if (udp_attached)
         printf("[%s.kext] : sflt_detach_ipv4(%s - socket=0x%X), %d/%d.\n",
-               DRIVER_NAME, "udp_ipv4", (unsigned int) socket, gfilter_stats.udp_ipv4_in_use, gfilter_stats.udp_ipv4_total);
+               DRIVER_NAME, "udp_ipv4",
+               (unsigned int) socket,
+               filter_stats.udp_ipv4_in_use,
+               filter_stats.udp_ipv4_total);
 #endif
 }
 
 //
-// sflt_filter.sflt_notify_func is called to notify the filter of various state changes and other events occuring on the socket.
+// sflt_filter.sflt_notify_func is called to notify the filter of various state changes and other events occuring on the socket
 //
 
 static
@@ -513,183 +565,255 @@ sflt_notify(
     void *param
     )
 {
-    struct log_entry *entry = get_entry_from_cookie(cookie);
+    struct sflt_log_entry *entry;
 
-    if (!entry) return;
+    entry = get_entry_from_cookie(cookie);
+    if (!entry)
+        return;
 
     assert (entry->info.status);
-
-    switch (event)
-    {
-    case sock_evt_connecting:
-        {
+    switch (event) {
+    case sock_evt_connecting: {
+            void *src_address;
+            in_port_t src_port;
             char src_string[256];
-            in_port_t src_port = 0;
-            void *src_address = NULL;
 
-            if (AF_INET == entry->protocol)
-            {
+            if (AF_INET == entry->protocol) {
                 //
                 // Check to see if we have obtained the source socket information
                 //
 
-                if (!entry->info.source.addr4.sin_len)
-                {
-                    sock_getsockname(socket, (struct sockaddr*) &(entry->info.source.addr4), sizeof(entry->info.source.addr4));
-                    entry->info.source.addr4.sin_port = ntohs(entry->info.source.addr4.sin_port);
+                if (!entry->info.source.addr4.sin_len) {
+                    sock_getsockname(socket,
+                                     (struct sockaddr*) &(entry->info.source.addr4),
+                                     sizeof(entry->info.source.addr4));
+                    entry->info.source.addr4.sin_port =
+                        ntohs(entry->info.source.addr4.sin_port);
                 }
 
                 src_port = entry->info.source.addr4.sin_port;
                 src_address = &(entry->info.source.addr4.sin_addr);
-            }
-            else if (AF_INET6 == entry->protocol)
-            {
+            } else if (AF_INET6 == entry->protocol) {
                 //
                 // It's an AF_INET6 connection
                 //
 
-                if (!entry->info.source.addr6.sin6_len)
-                {
-                    sock_getsockname(socket, (struct sockaddr*) &(entry->info.source.addr6), sizeof(entry->info.source.addr6));
-                    entry->info.source.addr6.sin6_port = ntohs(entry->info.source.addr6.sin6_port);
+                if (!entry->info.source.addr6.sin6_len) {
+                    sock_getsockname(socket,
+                                     (struct sockaddr*) &(entry->info.source.addr6),
+                                     sizeof(entry->info.source.addr6));
+                    entry->info.source.addr6.sin6_port =
+                        ntohs(entry->info.source.addr6.sin6_port);
                 }
 
                 src_port = entry->info.source.addr6.sin6_port;
                 src_address = &(entry->info.source.addr6.sin6_addr);
+            } else {
+                src_port = 0;
+                src_address = NULL;
             }
 
-            inet_ntop(entry->protocol, src_address, src_string, sizeof(src_string));
+            if (!src_port && !src_address) {
+                memset(src_string, 0,
+                       sizeof(src_string));
+            } else {
+                memset(src_string, 0,
+                       sizeof(src_string));
+
+                inet_ntop(entry->protocol,
+                          src_address,
+                          src_string,
+                          sizeof(src_string));
+            }
 
         #if SFLT_TRAFFIC_TROUBLESHOOTING
             if (entry->tcp_ipv4_attached)
                 printf("[%s.kext] : sock_evt_connecting(%s - socket=0x%X), source address=%s:%d.\n",
-                       DRIVER_NAME, "tcp_ipv4", (unsigned int) socket, src_string, src_port);
+                       DRIVER_NAME, "tcp_ipv4",
+                       (unsigned int) socket,
+                       src_string, src_port);
             else if (entry->udp_ipv4_attached)
                 printf("[%s.kext] : sock_evt_connecting(%s - socket=0x%X), source address=%s:%d.\n",
-                       DRIVER_NAME, "udp_ipv4", (unsigned int) socket, src_string, src_port);
+                       DRIVER_NAME, "udp_ipv4",
+                       (unsigned int) socket,
+                       src_string, src_port);
         #endif
         }
         break;
 
-    case sock_evt_connected:
-        {
+    case sock_evt_connected: {
+            void *dst_address;
+            in_port_t dst_port;
             char dst_string[256];
-            in_port_t dst_port = 0;
-            void *dst_address = NULL;
 
-            if (AF_INET == entry->protocol)
-            {
+            if (AF_INET == entry->protocol) {
                 //
                 // Check to see if we have obtained the destination socket information
                 //
 
-                if (!entry->info.destination.addr4.sin_len)
-                {
-                    sock_getpeername(socket, (struct sockaddr*) &(entry->info.destination.addr4), sizeof(entry->info.destination.addr4));
-                    entry->info.destination.addr4.sin_port = ntohs(entry->info.destination.addr4.sin_port);
+                if (!entry->info.destination.addr4.sin_len) {
+                    sock_getpeername(socket,
+                                     (struct sockaddr*) &(entry->info.destination.addr4),
+                                     sizeof(entry->info.destination.addr4));
+                    entry->info.destination.addr4.sin_port =
+                        ntohs(entry->info.destination.addr4.sin_port);
                 }
 
                 dst_port = entry->info.destination.addr4.sin_port;
                 dst_address = &(entry->info.destination.addr4.sin_addr);
-            }
-            else if (AF_INET6 == entry->protocol)
-            {
+            } else if (AF_INET6 == entry->protocol) {
                 //
                 // It's an AF_INET6 connection
                 //
 
-                if (!entry->info.destination.addr6.sin6_len)
-                {
-                    sock_getpeername(socket, (struct sockaddr*) &(entry->info.destination.addr6), sizeof(entry->info.destination.addr6));
-                    entry->info.destination.addr6.sin6_port = ntohs(entry->info.destination.addr6.sin6_port);
+                if (!entry->info.destination.addr6.sin6_len) {
+                    sock_getpeername(socket,
+                                     (struct sockaddr*) &(entry->info.destination.addr6),
+                                     sizeof(entry->info.destination.addr6));
+                    entry->info.destination.addr6.sin6_port =
+                        ntohs(entry->info.destination.addr6.sin6_port);
                 }
 
                 dst_port = entry->info.destination.addr6.sin6_port;
                 dst_address = &(entry->info.destination.addr6.sin6_addr);
+            } else {
+                dst_port = 0;
+                dst_address = NULL;
             }
 
-            inet_ntop(entry->protocol, dst_address, dst_string, sizeof(dst_string));
+            if (!dst_port && !dst_address) {
+                memset(dst_string, 0,
+                       sizeof(dst_string));
+            } else {
+                memset(dst_string, 0,
+                       sizeof(dst_string));
+
+                inet_ntop(entry->protocol,
+                          dst_address,
+                          dst_string,
+                          sizeof(dst_string));
+            }
 
         #if SFLT_TRAFFIC_TROUBLESHOOTING
             if (entry->tcp_ipv4_attached)
                 printf("[%s.kext] : sock_evt_connected(%s - socket=0x%X), destination address=%s:%d.\n",
-                       DRIVER_NAME, "tcp_ipv4", (unsigned int) socket, dst_string, dst_port);
+                       DRIVER_NAME, "tcp_ipv4",
+                       (unsigned int) socket,
+                       dst_string, dst_port);
             else if (entry->udp_ipv4_attached)
                 printf("[%s.kext] : sock_evt_connected(%s - socket=0x%X), destination address=%s:%d.\n",
-                       DRIVER_NAME, "udp_ipv4", (unsigned int) socket, dst_string, dst_port);
+                       DRIVER_NAME, "udp_ipv4",
+                       (unsigned int) socket,
+                       dst_string, dst_port);
         #endif
         }
         break;
 
-#if SFLT_TRAFFIC_TROUBLESHOOTING
+    #if SFLT_TRAFFIC_TROUBLESHOOTING
     case sock_evt_disconnecting:
         if (entry->tcp_ipv4_attached)
-            printf("[%s.kext] : sock_evt_disconnecting(%s - socket=0x%X).\n", DRIVER_NAME, "tcp_ipv4", (unsigned int) socket);
+            printf("[%s.kext] : sock_evt_disconnecting(%s - socket=0x%X).\n",
+                   DRIVER_NAME, "tcp_ipv4",
+                   (unsigned int) socket);
         else if (entry->udp_ipv4_attached)
-            printf("[%s.kext] : sock_evt_disconnecting(%s - socket=0x%X).\n", DRIVER_NAME, "udp_ipv4", (unsigned int) socket);
+            printf("[%s.kext] : sock_evt_disconnecting(%s - socket=0x%X).\n",
+                   DRIVER_NAME, "udp_ipv4",
+                   (unsigned int) socket);
         break;
 
     case sock_evt_disconnected:
         if (entry->tcp_ipv4_attached)
-            printf("[%s.kext] : sock_evt_disconnected(%s - socket=0x%X).\n", DRIVER_NAME, "tcp_ipv4", (unsigned int) socket);
+            printf("[%s.kext] : sock_evt_disconnected(%s - socket=0x%X).\n",
+                   DRIVER_NAME, "tcp_ipv4",
+                   (unsigned int) socket);
         else if (entry->udp_ipv4_attached)
-            printf("[%s.kext] : sock_evt_disconnected(%s - socket=0x%X).\n", DRIVER_NAME, "udp_ipv4", (unsigned int) socket);
+            printf("[%s.kext] : sock_evt_disconnected(%s - socket=0x%X).\n",
+                   DRIVER_NAME, "udp_ipv4",
+                   (unsigned int) socket);
         break;
 
     case sock_evt_flush_read:
         if (entry->tcp_ipv4_attached)
-            printf("[%s.kext] : sock_evt_flush_read(%s - socket=0x%X).\n", DRIVER_NAME, "tcp_ipv4", (unsigned int) socket);
+            printf("[%s.kext] : sock_evt_flush_read(%s - socket=0x%X).\n",
+                   DRIVER_NAME, "tcp_ipv4",
+                   (unsigned int) socket);
         else if (entry->udp_ipv4_attached)
-            printf("[%s.kext] : sock_evt_flush_read(%s - socket=0x%X).\n", DRIVER_NAME, "udp_ipv4", (unsigned int) socket);
+            printf("[%s.kext] : sock_evt_flush_read(%s - socket=0x%X).\n",
+                   DRIVER_NAME, "udp_ipv4",
+                   (unsigned int) socket);
         break;
 
     case sock_evt_shutdown:
         if (entry->tcp_ipv4_attached)
-            printf("[%s.kext] : sock_evt_shutdown(%s - socket=0x%X).\n", DRIVER_NAME, "tcp_ipv4", (unsigned int) socket);
+            printf("[%s.kext] : sock_evt_shutdown(%s - socket=0x%X).\n",
+                   DRIVER_NAME, "tcp_ipv4",
+                   (unsigned int) socket);
         else if (entry->udp_ipv4_attached)
-            printf("[%s.kext] : sock_evt_shutdown(%s - socket=0x%X).\n", DRIVER_NAME, "udp_ipv4", (unsigned int) socket);
+            printf("[%s.kext] : sock_evt_shutdown(%s - socket=0x%X).\n",
+                   DRIVER_NAME, "udp_ipv4",
+                   (unsigned int) socket);
         break;
 
     case sock_evt_cantrecvmore:
         if (entry->tcp_ipv4_attached)
-            printf("[%s.kext] : sock_evt_cantrecvmore(%s - socket=0x%X).\n", DRIVER_NAME, "tcp_ipv4", (unsigned int) socket);
+            printf("[%s.kext] : sock_evt_cantrecvmore(%s - socket=0x%X).\n",
+                   DRIVER_NAME, "tcp_ipv4",
+                   (unsigned int) socket);
         else if (entry->udp_ipv4_attached)
-            printf("[%s.kext] : sock_evt_cantrecvmore(%s - socket=0x%X).\n", DRIVER_NAME, "udp_ipv4", (unsigned int) socket);
+            printf("[%s.kext] : sock_evt_cantrecvmore(%s - socket=0x%X).\n",
+                   DRIVER_NAME, "udp_ipv4",
+                   (unsigned int) socket);
         break;
 
     case sock_evt_cantsendmore:
         if (entry->tcp_ipv4_attached)
-            printf("[%s.kext] : sock_evt_cantsendmore(%s - socket=0x%X).\n", DRIVER_NAME, "tcp_ipv4", (unsigned int) socket);
+            printf("[%s.kext] : sock_evt_cantsendmore(%s - socket=0x%X).\n",
+                   DRIVER_NAME, "tcp_ipv4",
+                   (unsigned int) socket);
         else if (entry->udp_ipv4_attached)
-            printf("[%s.kext] : sock_evt_cantsendmore(%s - socket=0x%X).\n", DRIVER_NAME, "udp_ipv4", (unsigned int) socket);
+            printf("[%s.kext] : sock_evt_cantsendmore(%s - socket=0x%X).\n",
+                   DRIVER_NAME, "udp_ipv4",
+                   (unsigned int) socket);
         break;
 
     case sock_evt_closing:
         if (entry->tcp_ipv4_attached)
-            printf("[%s.kext] : sock_evt_closing(%s - socket=0x%X).\n", DRIVER_NAME, "tcp_ipv4", (unsigned int) socket);
+            printf("[%s.kext] : sock_evt_closing(%s - socket=0x%X).\n",
+                   DRIVER_NAME, "tcp_ipv4",
+                   (unsigned int) socket);
         else if (entry->udp_ipv4_attached)
-            printf("[%s.kext] : sock_evt_closing(%s - socket=0x%X).\n", DRIVER_NAME, "udp_ipv4", (unsigned int) socket);
+            printf("[%s.kext] : sock_evt_closing(%s - socket=0x%X).\n",
+                   DRIVER_NAME, "udp_ipv4",
+                   (unsigned int) socket);
         break;
 
     case sock_evt_bound:
         if (entry->tcp_ipv4_attached)
-            printf("[%s.kext] : sock_evt_bound(%s - socket=0x%X).\n", DRIVER_NAME, "tcp_ipv4", (unsigned int) socket);
+            printf("[%s.kext] : sock_evt_bound(%s - socket=0x%X).\n",
+                   DRIVER_NAME, "tcp_ipv4",
+                   (unsigned int) socket);
         else if (entry->udp_ipv4_attached)
-            printf("[%s.kext] : sock_evt_bound(%s - socket=0x%X).\n", DRIVER_NAME, "udp_ipv4", (unsigned int) socket);
+            printf("[%s.kext] : sock_evt_bound(%s - socket=0x%X).\n",
+                   DRIVER_NAME, "udp_ipv4",
+                   (unsigned int) socket);
         break;
 
     default:
         if (entry->tcp_ipv4_attached)
-            printf("[%s.kext] : Unknown event!(%s - socket=0x%X), event=0x%X.\n", DRIVER_NAME, "tcp_ipv4", (unsigned int) socket, event);
+            printf("[%s.kext] : Unknown event! (%s - socket=0x%X), event=0x%X.\n",
+                   DRIVER_NAME, "tcp_ipv4",
+                   (unsigned int) socket, event);
         else if (entry->udp_ipv4_attached)
-            printf("[%s.kext] : Unknown event!(%s - socket=0x%X), event=0x%X.\n", DRIVER_NAME, "udp_ipv4", (unsigned int) socket, event);
+            printf("[%s.kext] : Unknown event! (%s - socket=0x%X), event=0x%X.\n",
+                   DRIVER_NAME, "udp_ipv4",
+                   (unsigned int) socket, event);
         break;
-#endif
+    #endif
     }
 }
 
 //
-// sflt_filter.sflt_data_in_func is called to filter incoming data.
+// sflt_filter.sflt_data_in_func is called to filter incoming data
 //
 
 static
@@ -704,12 +828,14 @@ sflt_data_in(
     )
 {
     errno_t result = 0;
-    in_port_t src_port = 0, dst_port = 0;
+    struct sflt_log_entry *entry;
+    in_port_t src_port, dst_port;
+    void *src_address, *dst_address;
     char src_string[256], dst_string[256];
-    void *src_address = NULL, *dst_address = NULL;
-    struct log_entry *entry = get_entry_from_cookie(cookie);
 
-    if (!entry) return result;
+    entry = get_entry_from_cookie(cookie);
+    if (!entry)
+        return result;
 
     //
     // First, let's get some statistics from the packet
@@ -718,14 +844,15 @@ sflt_data_in(
     mbuf_t packet = *data;
     size_t bytes = mbuf_pkthdr_len(*data);
     OSIncrementAtomic(&(entry->info.in_packets));
-    OSAddAtomic((SInt32) bytes, &(entry->info.in_bytes)); // Integer overflow?
+    OSAddAtomic((SInt32) bytes,
+                &(entry->info.in_bytes)); // Integer overflow?
 
     //
     // Parse the first inbound packet
     //
 
-    if ((AF_INET == entry->protocol) && OSCompareAndSwap(0, 1, &(entry->info.first_in_packet)))
-    {
+    if ((AF_INET == entry->protocol) &&
+        OSCompareAndSwap(0, 1, &(entry->info.first_in_bytes))) {
         src_port = entry->info.source.addr4.sin_port;
         dst_port = entry->info.destination.addr4.sin_port;
 
@@ -733,214 +860,283 @@ sflt_data_in(
         memset(dst_string, 0, sizeof(dst_string));
 
         src_address = &(entry->info.source.addr4.sin_addr);
-        inet_ntop(entry->protocol, src_address, src_string, sizeof(src_string));
+        inet_ntop(entry->protocol, src_address,
+                  src_string, sizeof(src_string));
 
         dst_address = &(entry->info.destination.addr4.sin_addr);
-        inet_ntop(entry->protocol, dst_address, dst_string, sizeof(dst_string));
+        inet_ntop(entry->protocol, dst_address,
+                  dst_string, sizeof(dst_string));
 
-        if (src_address && src_port && dst_address && dst_port)
-        {
-            while (packet && MBUF_TYPE_DATA != mbuf_type(packet))
-            {
+        if (src_address && src_port &&
+            dst_address && dst_port) {
+            while (packet &&
+                   MBUF_TYPE_DATA != mbuf_type(packet)) {
                 packet = mbuf_next(packet);
             }
 
-            if (packet && MBUF_TYPE_DATA == mbuf_type(packet))
-            {
-                struct ether_header *etherheader = (struct ether_header *) mbuf_pkthdr_header(*data);
+            if (packet &&
+                MBUF_TYPE_DATA == mbuf_type(packet)) {
+                struct ether_header *etherheader =
+                    mbuf_pkthdr_header(*data);
+                if (etherheader) {
+                    if (entry->tcp_ipv4_attached) {
+                        //
+                        // TCP IPv4 socket
+                        //
 
-                if (etherheader)
-                {
-                    //
-                    // TCP IPv4 socket
-                    //
+                        struct ip *ipheader =
+                            (struct ip *) (etherheader + 1);
+                        unsigned int ipsize =
+                            ipheader->ip_hl * sizeof(unsigned int);
+                        struct tcphdr *tcpheader =
+                            (struct tcphdr *) ((char *) ipheader +
+                                               ipsize);
+                        unsigned int tcpsize =
+                            tcpheader->th_off * sizeof(unsigned int);
+                        unsigned int headersize =
+                            sizeof(*etherheader) + ipsize + tcpsize;
 
-                    if (entry->tcp_ipv4_attached)
-                    {
-                        struct ip *ipheader = (struct ip *) ((unsigned char *) etherheader + sizeof(struct ether_header));
-                        unsigned int ipsize = ipheader->ip_hl * sizeof(unsigned int);
-                        struct tcphdr *tcpheader = (struct tcphdr *) ((unsigned char *) ipheader + ipsize);
-                        unsigned int tcpsize = tcpheader->th_off * sizeof(unsigned int);
-                        unsigned int headersize = sizeof(struct ether_header) + ipsize + tcpsize;
+                        if (OSCompareAndSwap(0, 1,
+                                             &(entry->info.ether_header))) {
+                            entry->info.ether_shost[0] = etherheader->ether_shost[0];
+                            entry->info.ether_shost[1] = etherheader->ether_shost[1];
+                            entry->info.ether_shost[2] = etherheader->ether_shost[2];
+                            entry->info.ether_shost[3] = etherheader->ether_shost[3];
+                            entry->info.ether_shost[4] = etherheader->ether_shost[4];
+                            entry->info.ether_shost[5] = etherheader->ether_shost[5];
 
-                        if (OSCompareAndSwap(0, 1, &(entry->info.ether_header)))
-                        {
-                            entry->info.ether_shost[0] = etherheader->ether_shost[0]; entry->info.ether_shost[1] = etherheader->ether_shost[1];
-                            entry->info.ether_shost[2] = etherheader->ether_shost[2]; entry->info.ether_shost[3] = etherheader->ether_shost[3];
-                            entry->info.ether_shost[4] = etherheader->ether_shost[4]; entry->info.ether_shost[5] = etherheader->ether_shost[5];
-
-                            entry->info.ether_dhost[0] = etherheader->ether_dhost[0]; entry->info.ether_dhost[1] = etherheader->ether_dhost[1];
-                            entry->info.ether_dhost[2] = etherheader->ether_dhost[2]; entry->info.ether_dhost[3] = etherheader->ether_dhost[3];
-                            entry->info.ether_dhost[4] = etherheader->ether_dhost[4]; entry->info.ether_dhost[5] = etherheader->ether_dhost[5];
+                            entry->info.ether_dhost[0] = etherheader->ether_dhost[0];
+                            entry->info.ether_dhost[1] = etherheader->ether_dhost[1];
+                            entry->info.ether_dhost[2] = etherheader->ether_dhost[2];
+                            entry->info.ether_dhost[3] = etherheader->ether_dhost[3];
+                            entry->info.ether_dhost[4] = etherheader->ether_dhost[4];
+                            entry->info.ether_dhost[5] = etherheader->ether_dhost[5];
                         }
 
                     #if SFLT_TRAFFIC_TROUBLESHOOTING
                         printf("[%s.kext] : <TCP> %s:%d(%02x:%02x:%02x:%02x:%02x:%02x)<-%s:%d(%02x:%02x:%02x:%02x:%02x:%02x).\n",
                                DRIVER_NAME, src_string, src_port,
-                               etherheader->ether_dhost[0], etherheader->ether_dhost[1], etherheader->ether_dhost[2],
-                               etherheader->ether_dhost[3], etherheader->ether_dhost[4], etherheader->ether_dhost[5],
+                               etherheader->ether_dhost[0],
+                               etherheader->ether_dhost[1],
+                               etherheader->ether_dhost[2],
+                               etherheader->ether_dhost[3],
+                               etherheader->ether_dhost[4],
+                               etherheader->ether_dhost[5],
                                dst_string, dst_port,
-                               etherheader->ether_shost[0], etherheader->ether_shost[1], etherheader->ether_shost[2],
-                               etherheader->ether_shost[3], etherheader->ether_shost[4], etherheader->ether_shost[5]);
+                               etherheader->ether_shost[0],
+                               etherheader->ether_shost[1],
+                               etherheader->ether_shost[2],
+                               etherheader->ether_shost[3],
+                               etherheader->ether_shost[4],
+                               etherheader->ether_shost[5]);
                     #endif
 
                         //
                         // Save the first inbound packet data
                         //
 
-                        if (!entry->info.first_in_packet_data)
-                        {
-                            if ((void *) ((unsigned char *) etherheader + headersize) == mbuf_data(packet))
-                            {
-                                entry->info.first_in_packet_data = OSMalloc((uint32_t) (bytes + headersize), gmalloc_tag);
+                        if (!entry->info.first_in_packet) {
+                            if ((void *) ((char *) etherheader + headersize) ==
+                                mbuf_data(packet)) {
+                                entry->info.first_in_packet =
+                                    OSMalloc((uint32_t) (bytes + headersize),
+                                             gmalloc_tag);
+                                if (entry->info.first_in_packet) {
+                                    memset(entry->info.first_in_packet,
+                                           0, bytes + headersize);
 
-                                if (entry->info.first_in_packet_data)
-                                {
-                                    memset(entry->info.first_in_packet_data, 0, bytes + headersize);
+                                    //
+                                    // Update the first_in_bytes
+                                    //
 
-                                    entry->info.first_in_packet_size = (uint32_t) (bytes + headersize);
+                                    entry->info.first_in_bytes =
+                                        (UInt32) (bytes + headersize);
 
-                                    memcpy(entry->info.first_in_packet_data, mbuf_pkthdr_header(*data), bytes + headersize);
+                                    memcpy(entry->info.first_in_packet,
+                                           mbuf_pkthdr_header(*data),
+                                           bytes + headersize);
 
                                 #if SFLT_TRAFFIC_TROUBLESHOOTING
-                                    hex_printf(entry->info.first_in_packet_data, bytes + headersize, HEX_PRINTF_B);
+                                    hex_printf(entry->info.first_in_packet,
+                                               bytes + headersize,
+                                               HEX_PRINTF_B);
                                 #endif
                                 }
-                            }
-                            else
-                            {
-                                entry->info.first_in_packet_data = OSMalloc((uint32_t) mbuf_len(packet), gmalloc_tag);
+                            } else {
+                                entry->info.first_in_packet =
+                                    OSMalloc((uint32_t) mbuf_len(packet),
+                                             gmalloc_tag);
+                                if (entry->info.first_in_packet) {
+                                    memset(entry->info.first_in_packet,
+                                           0, mbuf_len(packet));
 
-                                if (entry->info.first_in_packet_data)
-                                {
-                                    memset(entry->info.first_in_packet_data, 0, mbuf_len(packet));
+                                    entry->info.first_in_bytes =
+                                        (UInt32) mbuf_len(packet);
 
-                                    entry->info.first_in_packet_size = (uint32_t) mbuf_len(packet);
-
-                                    memcpy(entry->info.first_in_packet_data, mbuf_data(packet), mbuf_len(packet));
+                                    memcpy(entry->info.first_in_packet,
+                                           mbuf_data(packet),
+                                           mbuf_len(packet));
 
                                 #if SFLT_TRAFFIC_TROUBLESHOOTING
-                                    hex_printf(entry->info.first_in_packet_data, mbuf_len(packet), HEX_PRINTF_B);
+                                    hex_printf(entry->info.first_in_packet,
+                                               mbuf_len(packet),
+                                               HEX_PRINTF_B);
                                 #endif
                                 }
                             }
                         }
-                    }
+                    } else if (entry->udp_ipv4_attached) {
+                        //
+                        // UDP IPv4 socket
+                        //
 
-                    //
-                    // UDP IPv4 socket
-                    //
-
-                    else if (entry->udp_ipv4_attached)
-                    {
-                        char ip_dst_string[256];
-                        struct ip *ipheader = (struct ip *) ((unsigned char *) etherheader + sizeof(struct ether_header));
-                        unsigned int ipsize = ipheader->ip_hl * sizeof(unsigned int);
-                        unsigned int headersize = sizeof(struct ether_header) + ipsize + sizeof(struct udphdr);
+                        struct ip *ipheader =
+                            (struct ip *) (etherheader + 1);
+                        unsigned int ipsize =
+                            ipheader->ip_hl * sizeof(unsigned int);
+                        unsigned int headersize =
+                            sizeof(*etherheader) + ipsize +
+                            sizeof(struct udphdr);
                         void *ip_dst_address = &ipheader->ip_dst;
+                        char ip_dst_string[256];
 
-                        if (OSCompareAndSwap(0, 1, &(entry->info.ether_header)))
-                        {
-                            entry->info.ether_shost[0] = etherheader->ether_shost[0]; entry->info.ether_shost[1] = etherheader->ether_shost[1];
-                            entry->info.ether_shost[2] = etherheader->ether_shost[2]; entry->info.ether_shost[3] = etherheader->ether_shost[3];
-                            entry->info.ether_shost[4] = etherheader->ether_shost[4]; entry->info.ether_shost[5] = etherheader->ether_shost[5];
+                        if (OSCompareAndSwap(0, 1,
+                                             &(entry->info.ether_header))) {
+                            entry->info.ether_shost[0] = etherheader->ether_shost[0];
+                            entry->info.ether_shost[1] = etherheader->ether_shost[1];
+                            entry->info.ether_shost[2] = etherheader->ether_shost[2];
+                            entry->info.ether_shost[3] = etherheader->ether_shost[3];
+                            entry->info.ether_shost[4] = etherheader->ether_shost[4];
+                            entry->info.ether_shost[5] = etherheader->ether_shost[5];
 
-                            entry->info.ether_dhost[0] = etherheader->ether_dhost[0]; entry->info.ether_dhost[1] = etherheader->ether_dhost[1];
-                            entry->info.ether_dhost[2] = etherheader->ether_dhost[2]; entry->info.ether_dhost[3] = etherheader->ether_dhost[3];
-                            entry->info.ether_dhost[4] = etherheader->ether_dhost[4]; entry->info.ether_dhost[5] = etherheader->ether_dhost[5];
+                            entry->info.ether_dhost[0] = etherheader->ether_dhost[0];
+                            entry->info.ether_dhost[1] = etherheader->ether_dhost[1];
+                            entry->info.ether_dhost[2] = etherheader->ether_dhost[2];
+                            entry->info.ether_dhost[3] = etherheader->ether_dhost[3];
+                            entry->info.ether_dhost[4] = etherheader->ether_dhost[4];
+                            entry->info.ether_dhost[5] = etherheader->ether_dhost[5];
                         }
 
-                        if (!entry->info.source.addr4.sin_addr.s_addr)
-                        {
-                            inet_ntop(entry->protocol, ip_dst_address, ip_dst_string, sizeof(ip_dst_string));
+                        if (!entry->info.source.addr4.sin_addr.s_addr) {
+                            inet_ntop(entry->protocol,
+                                      ip_dst_address,
+                                      ip_dst_string,
+                                      sizeof(ip_dst_string));
                         }
 
                     #if SFLT_TRAFFIC_TROUBLESHOOTING
                         printf("[%s.kext] : <UDP> %s:%d(%02x:%02x:%02x:%02x:%02x:%02x)<-%s:%d(%02x:%02x:%02x:%02x:%02x:%02x).\n",
-                               DRIVER_NAME, entry->info.source.addr4.sin_addr.s_addr ? src_string : ip_dst_string, src_port,
-                               etherheader->ether_dhost[0], etherheader->ether_dhost[1], etherheader->ether_dhost[2],
-                               etherheader->ether_dhost[3], etherheader->ether_dhost[4], etherheader->ether_dhost[5],
+                               DRIVER_NAME,
+                               entry->info.source.addr4.sin_addr.s_addr ?
+                               src_string : ip_dst_string, src_port,
+                               etherheader->ether_dhost[0],
+                               etherheader->ether_dhost[1],
+                               etherheader->ether_dhost[2],
+                               etherheader->ether_dhost[3],
+                               etherheader->ether_dhost[4],
+                               etherheader->ether_dhost[5],
                                dst_string, dst_port,
-                               etherheader->ether_shost[0], etherheader->ether_shost[1], etherheader->ether_shost[2],
-                               etherheader->ether_shost[3], etherheader->ether_shost[4], etherheader->ether_shost[5]);
+                               etherheader->ether_shost[0],
+                               etherheader->ether_shost[1],
+                               etherheader->ether_shost[2],
+                               etherheader->ether_shost[3],
+                               etherheader->ether_shost[4],
+                               etherheader->ether_shost[5]);
                     #endif
 
                         //
                         // Save the first inbound packet data
                         //
 
-                        if (!entry->info.first_in_packet_data)
-                        {
-                            if ((void *) ((unsigned char *) etherheader + headersize) == mbuf_data(packet))
-                            {
-                                entry->info.first_in_packet_data = OSMalloc((uint32_t) (bytes + headersize), gmalloc_tag);
+                        if (!entry->info.first_in_packet) {
+                            if ((void *) ((char *) etherheader + headersize) ==
+                                mbuf_data(packet)) {
+                                entry->info.first_in_packet =
+                                    OSMalloc((uint32_t) (bytes + headersize),
+                                             gmalloc_tag);
+                                if (entry->info.first_in_packet) {
+                                    memset(entry->info.first_in_packet,
+                                           0, bytes + headersize);
 
-                                if (entry->info.first_in_packet_data)
-                                {
-                                    memset(entry->info.first_in_packet_data, 0, bytes + headersize);
+                                    //
+                                    // Update the first_in_bytes
+                                    //
 
-                                    entry->info.first_in_packet_size = (uint32_t) (bytes + headersize);
+                                    entry->info.first_in_bytes =
+                                        (UInt32) (bytes + headersize);
 
-                                    memcpy(entry->info.first_in_packet_data, mbuf_pkthdr_header(*data), bytes + headersize);
+                                    memcpy(entry->info.first_in_packet,
+                                           mbuf_pkthdr_header(*data),
+                                           bytes + headersize);
 
                                 #if SFLT_TRAFFIC_TROUBLESHOOTING
-                                    hex_printf(entry->info.first_in_packet_data, bytes + headersize, HEX_PRINTF_B);
+                                    hex_printf(entry->info.first_in_packet,
+                                               bytes + headersize,
+                                               HEX_PRINTF_B);
                                 #endif
                                 }
-                            }
-                            else
-                            {
-                                entry->info.first_in_packet_data = OSMalloc((uint32_t) mbuf_len(packet), gmalloc_tag);
+                            } else {
+                                entry->info.first_in_packet =
+                                    OSMalloc((uint32_t) mbuf_len(packet),
+                                             gmalloc_tag);
+                                if (entry->info.first_in_packet) {
+                                    memset(entry->info.first_in_packet,
+                                           0, mbuf_len(packet));
 
-                                if (entry->info.first_in_packet_data)
-                                {
-                                    memset(entry->info.first_in_packet_data, 0, mbuf_len(packet));
+                                    entry->info.first_in_bytes =
+                                        (UInt32) mbuf_len(packet);
 
-                                    entry->info.first_in_packet_size = (uint32_t) mbuf_len(packet);
-
-                                    memcpy(entry->info.first_in_packet_data, mbuf_data(packet), mbuf_len(packet));
+                                    memcpy(entry->info.first_in_packet,
+                                           mbuf_data(packet),
+                                           mbuf_len(packet));
 
                                 #if SFLT_TRAFFIC_TROUBLESHOOTING
-                                    hex_printf(entry->info.first_in_packet_data, mbuf_len(packet), HEX_PRINTF_B);
+                                    hex_printf(entry->info.first_in_packet,
+                                               mbuf_len(packet),
+                                               HEX_PRINTF_B);
                                 #endif
                                 }
                             }
                         }
                     }
-                }
-                else
-                {
+                } else {
                     //
                     // Impossible
                     //
 
                 #if SFLT_TRAFFIC_TROUBLESHOOTING
-                    printf("[%s.kext] : %s:%d<-%s:%d.\n", DRIVER_NAME, src_string, src_port, dst_string, dst_port);
+                    printf("[%s.kext] : %s:%d<-%s:%d.\n",
+                           DRIVER_NAME, src_string, src_port,
+                           dst_string, dst_port);
                 #endif
 
-                    if (!entry->info.first_in_packet_data)
-                    {
-                        entry->info.first_in_packet_data = OSMalloc((uint32_t) mbuf_len(packet), gmalloc_tag);
+                    if (!entry->info.first_in_packet) {
+                        entry->info.first_in_packet =
+                            OSMalloc((uint32_t) mbuf_len(packet),
+                                     gmalloc_tag);
+                        if (entry->info.first_in_packet) {
+                            memset(entry->info.first_in_packet,
+                                   0, mbuf_len(packet));
 
-                        if (entry->info.first_in_packet_data)
-                        {
-                            memset(entry->info.first_in_packet_data, 0, mbuf_len(packet));
+                            entry->info.first_in_bytes =
+                                (UInt32) mbuf_len(packet);
 
-                            entry->info.first_in_packet_size = (uint32_t) mbuf_len(packet);
-
-                            memcpy(entry->info.first_in_packet_data, mbuf_data(packet), mbuf_len(packet));
+                            memcpy(entry->info.first_in_packet,
+                                   mbuf_data(packet),
+                                   mbuf_len(packet));
 
                         #if SFLT_TRAFFIC_TROUBLESHOOTING
-                            hex_printf(entry->info.first_in_packet_data, mbuf_len(packet), HEX_PRINTF_B);
+                            hex_printf(entry->info.first_in_packet,
+                                       mbuf_len(packet),
+                                       HEX_PRINTF_B);
                         #endif
                         }
                     }
                 }
             }
         }
-    }
-    else if ((AF_INET6 == entry->protocol) && OSCompareAndSwap(0, 1, &(entry->info.first_in_packet)))
-    {
+    } else if ((AF_INET6 == entry->protocol) &&
+               OSCompareAndSwap(0, 1, &(entry->info.first_in_bytes))) {
         src_port = entry->info.source.addr6.sin6_port;
         dst_port = entry->info.destination.addr6.sin6_port;
 
@@ -948,24 +1144,37 @@ sflt_data_in(
         memset(dst_string, 0, sizeof(dst_string));
 
         src_address = &(entry->info.source.addr6.sin6_addr);
-        inet_ntop(entry->protocol, src_address, src_string, sizeof(src_string));
+        inet_ntop(entry->protocol, src_address,
+                  src_string, sizeof(src_string));
 
         dst_address = &(entry->info.destination.addr6.sin6_addr);
-        inet_ntop(entry->protocol, dst_address, dst_string, sizeof(dst_string));
+        inet_ntop(entry->protocol, dst_address,
+                  dst_string, sizeof(dst_string));
 
-        if (src_address && src_port && dst_address && dst_port)
-        {
-            while (packet && MBUF_TYPE_DATA != mbuf_type(packet))
-            {
+        if (src_address && src_port &&
+            dst_address && dst_port) {
+            while (packet &&
+                   MBUF_TYPE_DATA != mbuf_type(packet)) {
                 packet = mbuf_next(packet);
             }
 
-            if (packet && MBUF_TYPE_DATA == mbuf_type(packet))
-            {
-            #if SFLT_TRAFFIC_TROUBLESHOOTING
-                printf("[%s.kext] : %s:%d<-%s:%d.\n", DRIVER_NAME, src_string, src_port, dst_string, dst_port);
+            if (packet &&
+                MBUF_TYPE_DATA == mbuf_type(packet)) {
+                //
+                // Update the first_in_bytes
+                //
 
-                hex_printf(mbuf_data(packet), mbuf_len(packet), HEX_PRINTF_B);
+                entry->info.first_in_bytes =
+                    (UInt32) mbuf_len(packet);
+
+            #if SFLT_TRAFFIC_TROUBLESHOOTING
+                printf("[%s.kext] : %s:%d<-%s:%d.\n",
+                       DRIVER_NAME, src_string, src_port,
+                       dst_string, dst_port);
+
+                hex_printf(mbuf_data(packet),
+                           mbuf_len(packet),
+                           HEX_PRINTF_B);
             #endif
             }
         }
@@ -975,7 +1184,7 @@ sflt_data_in(
 }
 
 //
-// sflt_filter.sflt_data_out_func is called to filter outbound data.
+// sflt_filter.sflt_data_out_func is called to filter outbound data
 //
 
 static
@@ -990,12 +1199,14 @@ sflt_data_out(
     )
 {
     errno_t result = 0;
-    in_port_t src_port = 0, dst_port = 0;
+    struct sflt_log_entry *entry;
+    in_port_t src_port, dst_port;
+    void *src_address, *dst_address;
     char src_string[256], dst_string[256];
-    void *src_address = NULL, *dst_address = NULL;
-    struct log_entry *entry = get_entry_from_cookie(cookie);
 
-    if (!entry) return result;
+    entry = get_entry_from_cookie(cookie);
+    if (!entry)
+        return result;
 
     //
     // First, let's get some statistics from the packet
@@ -1004,14 +1215,15 @@ sflt_data_out(
     mbuf_t packet = *data;
     size_t bytes = mbuf_pkthdr_len(*data);
     OSIncrementAtomic(&(entry->info.out_packets));
-    OSAddAtomic((SInt32) bytes, &(entry->info.out_bytes)); // Integer overflow?
+    OSAddAtomic((SInt32) bytes,
+                &(entry->info.out_bytes)); // Integer overflow?
 
     //
     // Parse the first outbound packet
     //
 
-    if ((AF_INET == entry->protocol) && OSCompareAndSwap(0, 1, &(entry->info.first_out_packet)))
-    {
+    if ((AF_INET == entry->protocol) &&
+        OSCompareAndSwap(0, 1, &(entry->info.first_out_bytes))) {
         src_port = entry->info.source.addr4.sin_port;
         dst_port = entry->info.destination.addr4.sin_port;
 
@@ -1019,83 +1231,98 @@ sflt_data_out(
         memset(dst_string, 0, sizeof(dst_string));
 
         src_address = &(entry->info.source.addr4.sin_addr);
-        inet_ntop(entry->protocol, src_address, src_string, sizeof(src_string));
+        inet_ntop(entry->protocol, src_address,
+                  src_string, sizeof(src_string));
 
         dst_address = &(entry->info.destination.addr4.sin_addr);
-        inet_ntop(entry->protocol, dst_address, dst_string, sizeof(dst_string));
+        inet_ntop(entry->protocol, dst_address,
+                  dst_string, sizeof(dst_string));
 
-        if (src_address && src_port && dst_address && dst_port)
-        {
-            while (packet && MBUF_TYPE_DATA != mbuf_type(packet))
-            {
+        if (src_address && src_port &&
+            dst_address && dst_port) {
+            while (packet &&
+                   MBUF_TYPE_DATA != mbuf_type(packet)) {
                 packet = mbuf_next(packet);
             }
 
-            if (packet && MBUF_TYPE_DATA == mbuf_type(packet))
-            {
-                struct ether_header *etherheader = (struct ether_header *) mbuf_pkthdr_header(*data);
+            if (packet &&
+                MBUF_TYPE_DATA == mbuf_type(packet)) {
+                struct ether_header *etherheader =
+                    mbuf_pkthdr_header(*data);
+                if (!etherheader) {
+                    if (entry->tcp_ipv4_attached) {
+                        //
+                        // TCP IPv4 socket
+                        //
 
-                if (!etherheader)
-                {
-                    //
-                    // TCP IPv4 socket
-                    //
-
-                    if (entry->tcp_ipv4_attached)
-                    {
                     #if SFLT_TRAFFIC_TROUBLESHOOTING
-                        printf("[%s.kext] : <TCP> %s:%d->%s:%d.\n", DRIVER_NAME, src_string, src_port, dst_string, dst_port);
+                        printf("[%s.kext] : <TCP> %s:%d->%s:%d.\n",
+                               DRIVER_NAME, src_string, src_port,
+                               dst_string, dst_port);
                     #endif
 
-                        if (!entry->info.first_out_packet_data)
-                        {
-                            entry->info.first_out_packet_data = OSMalloc((uint32_t) mbuf_len(packet), gmalloc_tag);
+                        if (!entry->info.first_out_packet) {
+                            entry->info.first_out_packet =
+                                OSMalloc((uint32_t) mbuf_len(packet),
+                                         gmalloc_tag);
+                            if (entry->info.first_out_packet) {
+                                memset(entry->info.first_out_packet,
+                                       0, mbuf_len(packet));
 
-                            if (entry->info.first_out_packet_data)
-                            {
-                                memset(entry->info.first_out_packet_data, 0, mbuf_len(packet));
+                                //
+                                // Update the first_out_bytes
+                                //
 
-                                entry->info.first_out_packet_size = (uint32_t) mbuf_len(packet);
+                                entry->info.first_out_bytes =
+                                    (UInt32) mbuf_len(packet);
 
-                                memcpy(entry->info.first_out_packet_data, mbuf_data(packet), mbuf_len(packet));
+                                memcpy(entry->info.first_out_packet,
+                                       mbuf_data(packet),
+                                       mbuf_len(packet));
 
                             #if SFLT_TRAFFIC_TROUBLESHOOTING
-                                hex_printf(entry->info.first_out_packet_data, mbuf_len(packet), HEX_PRINTF_B);
+                                hex_printf(entry->info.first_out_packet,
+                                           mbuf_len(packet),
+                                           HEX_PRINTF_B);
                             #endif
                             }
                         }
-                    }
-
-                    //
-                    // UDP IPv4 socket
-                    //
-
-                    else if (entry->udp_ipv4_attached)
-                    {
+                    } else if (entry->udp_ipv4_attached) {
                         //
-                        // No IP header
+                        // UDP IPv4 socket
                         //
 
                     #if SFLT_TRAFFIC_TROUBLESHOOTING
                         printf("[%s.kext] : <UDP> %s:%d->%s:%d.\n",
-                               DRIVER_NAME, entry->info.source.addr4.sin_addr.s_addr ? src_string : "localhost",
-                               src_port, dst_string, dst_port);
+                               DRIVER_NAME,
+                               entry->info.source.addr4.sin_addr.s_addr ?
+                               src_string : "localhost", src_port,
+                               dst_string, dst_port);
                     #endif
 
-                        if (!entry->info.first_out_packet_data)
-                        {
-                            entry->info.first_out_packet_data = OSMalloc((uint32_t) mbuf_len(packet), gmalloc_tag);
+                        if (!entry->info.first_out_packet) {
+                            entry->info.first_out_packet =
+                                OSMalloc((uint32_t) mbuf_len(packet),
+                                         gmalloc_tag);
+                            if (entry->info.first_out_packet) {
+                                memset(entry->info.first_out_packet,
+                                       0, mbuf_len(packet));
 
-                            if (entry->info.first_out_packet_data)
-                            {
-                                memset(entry->info.first_out_packet_data, 0, mbuf_len(packet));
+                                //
+                                // Update the first_out_bytes
+                                //
 
-                                entry->info.first_out_packet_size = (uint32_t) mbuf_len(packet);
+                                entry->info.first_out_bytes =
+                                    (UInt32) mbuf_len(packet);
 
-                                memcpy(entry->info.first_out_packet_data, mbuf_data(packet), mbuf_len(packet));
+                                memcpy(entry->info.first_out_packet,
+                                       mbuf_data(packet),
+                                       mbuf_len(packet));
 
                             #if SFLT_TRAFFIC_TROUBLESHOOTING
-                                hex_printf(entry->info.first_out_packet_data, mbuf_len(packet), HEX_PRINTF_B);
+                                hex_printf(entry->info.first_out_packet,
+                                           mbuf_len(packet),
+                                           HEX_PRINTF_B);
                             #endif
                             }
                         }
@@ -1106,69 +1333,81 @@ sflt_data_out(
                         // TODO: mDNSResponder monitoring
                         //
 
-                        if (DNS_PORT == dst_port)
-                        {
-                            void *dnspacket = OSMalloc((uint32_t) mbuf_len(packet), gmalloc_tag);
+                        if (DNS_PORT == dst_port) {
+                            void *dnspacket =
+                                OSMalloc((uint32_t) mbuf_len(packet),
+                                         gmalloc_tag);
+                            if (dnspacket) {
+                                struct dnshdr *dnsheader = dnspacket;
+                                unsigned char *dnsquestion =
+                                    (unsigned char *) (dnsheader + 1);
+                                unsigned long index, total, limit;
+                                unsigned long length, total_length = 0;
 
-                            if (dnspacket)
-                            {
-                                struct dnshdr *dnsheader = (struct dnshdr *) dnspacket;
-                                unsigned char *dnsquestion = (unsigned char *) dnsheader + sizeof(struct dnshdr);
-                                unsigned long length = 0, total_length = 0, index = 0, total = 0, limit = 0;
-
-                                memset(dnspacket, 0, mbuf_len(packet));
-                                memcpy(dnspacket, mbuf_data(packet), mbuf_len(packet));
+                                memset(dnspacket, 0,
+                                       mbuf_len(packet));
+                                memcpy(dnspacket,
+                                       mbuf_data(packet),
+                                       mbuf_len(packet));
                                 limit = strlen((const char *) dnsquestion);
+                                if (!limit)
+                                    goto out_osfree;
 
-                                for (index = 0; index < limit; index++)
-                                {
+                                for (index = 0; index < limit; index++) {
                                     length = dnsquestion[index];
 
                                     total_length += length;
+                                    if (total_length > limit)
+                                        goto out_osfree;
 
-                                    if (total_length > limit) goto DNS_QUERY_OVERFLOW;
-
-                                    for (total = 0; total < length; total++)
-                                    {
-                                        dnsquestion[index] = dnsquestion[index + 1];
-
+                                    for (total = 0; total < length; total++) {
+                                        dnsquestion[index] =
+                                        dnsquestion[index + 1];
                                         index += 1;
                                     }
 
                                     dnsquestion[index] = '.';
                                 }
-
                                 dnsquestion[index - 1] = '\0';
 
-                                char proc_name_pid[MAXPATHLEN] = {0};
+                                //
+                                // Tell the user about this request
+                                //
+
+                                char proc_name_pid[MAXPATHLEN];
                                 memset(proc_name_pid, 0, MAXPATHLEN);
-                                proc_name(entry->info.pid, proc_name_pid, MAXPATHLEN);
+                                proc_name(entry->info.pid,
+                                          proc_name_pid, MAXPATHLEN);
 
                                 int ppid = proc_selfppid();
-                                char proc_name_ppid[MAXPATHLEN] = {0};
+                                char proc_name_ppid[MAXPATHLEN];
                                 memset(proc_name_ppid, 0, MAXPATHLEN);
-                                proc_name(ppid, proc_name_ppid, MAXPATHLEN);
+                                proc_name(ppid,
+                                          proc_name_ppid, MAXPATHLEN);
 
                             #if SFLT_TRAFFIC_TROUBLESHOOTING
                                 printf("[%s.kext] : <DNS Query> %s:%d->%s:%d, uid=%d, process(pid %d)=%s, parent(ppid %d)=%s, query=%s.\n",
-                                       DRIVER_NAME, entry->info.source.addr4.sin_addr.s_addr ? src_string : "localhost", src_port,
-                                       dst_string, dst_port, entry->info.uid, entry->info.pid, proc_name_pid, ppid, proc_name_ppid, dnsquestion);
+                                       DRIVER_NAME,
+                                       entry->info.source.addr4.sin_addr.s_addr ?
+                                       src_string : "localhost", src_port,
+                                       dst_string, dst_port,
+                                       entry->info.uid,
+                                       entry->info.pid, proc_name_pid,
+                                       ppid, proc_name_ppid,
+                                       dnsquestion);
                             #endif
 
-                                //
-                                // Notify user mode client
-                                //
+                                struct network_dns_monitoring *message;
+                                uint32_t message_length =
+                                    sizeof(*message) +
+                                    (uint32_t) strlen((const char *) dnsquestion) + 1;
 
-                                struct network_dns_monitoring *message = NULL;
-                                uint32_t total_size = sizeof(struct network_dns_monitoring) + (uint32_t) strlen((const char *) dnsquestion) + 1;
+                                message = OSMalloc(message_length,
+                                                   gmalloc_tag);
+                                if (message) {
+                                    size_t tmp_length;
 
-                                message = (struct network_dns_monitoring *) OSMalloc(total_size, gmalloc_tag);
-
-                                if (message)
-                                {
-                                    size_t data_length = 0;
-
-                                    memset(message, 0, total_size);
+                                    memset(message, 0, message_length);
 
                                     //
                                     // Message header
@@ -1178,10 +1417,14 @@ sflt_data_out(
                                     message->header.type = NETWORK_UDP_DNS_QUERY;
 
                                     message->header.pid = entry->info.pid;
-                                    proc_name(message->header.pid, message->header.proc_name_pid, MAXPATHLEN);
+                                    proc_name(message->header.pid,
+                                              message->header.proc_name_pid,
+                                              MAXPATHLEN);
 
                                     message->header.ppid = ppid;
-                                    proc_name(message->header.ppid, message->header.proc_name_ppid, MAXPATHLEN);
+                                    proc_name(message->header.ppid,
+                                              message->header.proc_name_ppid,
+                                              MAXPATHLEN);
 
                                     message->header.uid = entry->info.uid;
                                     message->header.gid = kauth_getgid();
@@ -1190,53 +1433,59 @@ sflt_data_out(
                                     // Message body
                                     //
 
-                                    if (entry->info.source.addr4.sin_addr.s_addr)
-                                    {
-                                        data_length = strlen((const char *) src_string);
-                                        memcpy(message->source_address_string, src_string,
-                                               (data_length <= MAXPATHLEN - 1) ? data_length : MAXPATHLEN - 1);
+                                    if (entry->info.source.addr4.sin_addr.s_addr) {
+                                        tmp_length = strlen((const char *) src_string);
+                                        memcpy(message->source_address_string,
+                                               src_string,
+                                               (tmp_length <= MAXPATHLEN - 1) ?
+                                               tmp_length : MAXPATHLEN - 1);
+                                    } else {
+                                        tmp_length = strlen((const char *) "localhost");
+                                        memcpy(message->source_address_string,
+                                               "localhost",
+                                               (tmp_length <= MAXPATHLEN - 1) ?
+                                               tmp_length : MAXPATHLEN - 1);
                                     }
-                                    else
-                                    {
-                                        data_length = strlen((const char *) "localhost");
-                                        memcpy(message->source_address_string, "localhost",
-                                               (data_length <= MAXPATHLEN - 1) ? data_length : MAXPATHLEN - 1);
-                                    }
-                                    data_length = strlen((const char *) dst_string);
-                                    memcpy(message->destination_address_string, dst_string,
-                                           (data_length <= MAXPATHLEN - 1) ? data_length : MAXPATHLEN - 1);
+                                    tmp_length = strlen((const char *) dst_string);
+                                    memcpy(message->destination_address_string,
+                                           dst_string,
+                                           (tmp_length <= MAXPATHLEN - 1) ?
+                                           tmp_length : MAXPATHLEN - 1);
 
                                     message->source_port = src_port;
                                     message->destination_port = dst_port;
 
-                                    message->dns_question_length = strlen((const char *) dnsquestion);
-
-                                    char *dns_question_offset = (char *) message + sizeof(struct network_dns_monitoring);
-                                    memcpy(dns_question_offset, dnsquestion, strlen((const char *) dnsquestion));
+                                    message->dns_question_length =
+                                        strlen((const char *) dnsquestion);
+                                    char *dns_question_offset =
+                                        (char *) (message + 1);
+                                    memcpy(dns_question_offset,
+                                           dnsquestion,
+                                           strlen((const char *) dnsquestion));
 
                                     send_message((struct message_header *) message);
 
-                                    OSFree(message, total_size, gmalloc_tag);
+                                    OSFree(message,
+                                           message_length,
+                                           gmalloc_tag);
                                 }
 
-                            DNS_QUERY_OVERFLOW:
-
-                                OSFree(dnspacket, (uint32_t) mbuf_len(packet), gmalloc_tag);
+                            out_osfree:
+                                OSFree(dnspacket,
+                                       (uint32_t) mbuf_len(packet),
+                                       gmalloc_tag);
                             }
                         }
                     }
-                }
-                else
-                {
+                } else {
                     //
                     // Impossible
                     //
                 }
             }
         }
-    }
-    else if ((AF_INET6 == entry->protocol) && OSCompareAndSwap(0, 1, &(entry->info.first_out_packet)))
-    {
+    } else if ((AF_INET6 == entry->protocol) &&
+               OSCompareAndSwap(0, 1, &(entry->info.first_out_bytes))) {
         src_port = entry->info.source.addr6.sin6_port;
         dst_port = entry->info.destination.addr6.sin6_port;
 
@@ -1244,24 +1493,37 @@ sflt_data_out(
         memset(dst_string, 0, sizeof(dst_string));
 
         src_address = &(entry->info.source.addr6.sin6_addr);
-        inet_ntop(entry->protocol, src_address, src_string, sizeof(src_string));
+        inet_ntop(entry->protocol, src_address,
+                  src_string, sizeof(src_string));
 
         dst_address = &(entry->info.destination.addr6.sin6_addr);
-        inet_ntop(entry->protocol, dst_address, dst_string, sizeof(dst_string));
+        inet_ntop(entry->protocol, dst_address,
+                  dst_string, sizeof(dst_string));
 
-        if (src_address && src_port && dst_address && dst_port)
-        {
-            while (packet && MBUF_TYPE_DATA != mbuf_type(packet))
-            {
+        if (src_address && src_port &&
+            dst_address && dst_port) {
+            while (packet &&
+                   MBUF_TYPE_DATA != mbuf_type(packet)) {
                 packet = mbuf_next(packet);
             }
 
-            if (packet && MBUF_TYPE_DATA == mbuf_type(packet))
-            {
-            #if SFLT_TRAFFIC_TROUBLESHOOTING
-                printf("[%s.kext] : %s:%d->%s:%d.\n", DRIVER_NAME, src_string, src_port, dst_string, dst_port);
+            if (packet &&
+                MBUF_TYPE_DATA == mbuf_type(packet)) {
+                //
+                // Update the first_out_bytes
+                //
 
-                hex_printf(mbuf_data(packet), mbuf_len(packet), HEX_PRINTF_B);
+                entry->info.first_out_bytes =
+                    (UInt32) mbuf_len(packet);
+
+            #if SFLT_TRAFFIC_TROUBLESHOOTING
+                printf("[%s.kext] : %s:%d->%s:%d.\n",
+                       DRIVER_NAME, src_string, src_port,
+                       dst_string, dst_port);
+
+                hex_printf(mbuf_data(packet),
+                           mbuf_len(packet),
+                           HEX_PRINTF_B);
             #endif
             }
         }
@@ -1271,7 +1533,7 @@ sflt_data_out(
 }
 
 //
-// sflt_filter.sflt_connect_in_func is called to filter inbound connections.
+// sflt_filter.sflt_connect_in_func is called to filter inbound connections
 //
 
 static
@@ -1283,50 +1545,50 @@ sflt_connect_in(
     )
 {
     errno_t result = 0;
-    struct log_entry *entry = get_entry_from_cookie(cookie);
+    struct sflt_log_entry *entry;
+
+    entry = get_entry_from_cookie(cookie);
+    if (!entry)
+        return result;
+
+    OSBitOrAtomic(STATE_CONNECT_IN,
+                  &(entry->info.status));
 
     //
     // Verify that the address is AF_INET or AF_INET6
     //
 
-    assert ((AF_INET == from->sa_family) || (AF_INET6 == from->sa_family));
-
-    if (!entry) return result;
-
-    OSBitOrAtomic(STATE_CONNECT_IN, &(entry->info.status));
-
-    if (AF_INET == entry->protocol)
-    {
+    assert ((AF_INET == from->sa_family) ||
+            (AF_INET6 == from->sa_family));
+    if (AF_INET == entry->protocol) {
         //
         // Save the destination address in the info.destination field
         //
 
-        if (sizeof(entry->info.destination.addr4) >= from->sa_len)
-        {
+        if (sizeof(entry->info.destination.addr4) >= from->sa_len) {
             bcopy(from, &(entry->info.destination.addr4), from->sa_len);
 
             //
             // Ensure port is in host format
             //
 
-            entry->info.destination.addr4.sin_port = ntohs(entry->info.destination.addr4.sin_port);
+            entry->info.destination.addr4.sin_port =
+                ntohs(entry->info.destination.addr4.sin_port);
         }
-    }
-    else if (AF_INET6 == entry->protocol)
-    {
+    } else if (AF_INET6 == entry->protocol) {
         //
         // Save the destination address in the info.destination field
         //
 
-        if (sizeof(entry->info.destination.addr6) >= from->sa_len)
-        {
+        if (sizeof(entry->info.destination.addr6) >= from->sa_len) {
             bcopy(from, &(entry->info.destination.addr6), from->sa_len);
 
             //
             // Ensure port is in host format
             //
 
-            entry->info.destination.addr6.sin6_port = ntohs(entry->info.destination.addr6.sin6_port);
+            entry->info.destination.addr6.sin6_port =
+                ntohs(entry->info.destination.addr6.sin6_port);
         }
     }
 
@@ -1334,7 +1596,7 @@ sflt_connect_in(
 }
 
 //
-// sflt_filter.sflt_connect_out_func is called to filter outbound connections.
+// sflt_filter.sflt_connect_out_func is called to filter outbound connections
 //
 
 static
@@ -1346,50 +1608,50 @@ sflt_connect_out(
     )
 {
     errno_t result = 0;
-    struct log_entry *entry = get_entry_from_cookie(cookie);
+    struct sflt_log_entry *entry;
+
+    entry = get_entry_from_cookie(cookie);
+    if (!entry)
+        return result;
+
+    OSBitOrAtomic(STATE_CONNECT_OUT,
+                  &(entry->info.status));
 
     //
     // Verify that the address is AF_INET or AF_INET6
     //
 
-    assert ((AF_INET == to->sa_family) || (AF_INET6 == to->sa_family));
-
-    if (!entry) return result;
-
-    OSBitOrAtomic(STATE_CONNECT_OUT, &(entry->info.status));
-
-    if (AF_INET == entry->protocol)
-    {
+    assert ((AF_INET == to->sa_family) ||
+            (AF_INET6 == to->sa_family));
+    if (AF_INET == entry->protocol) {
         //
         // Save the destination address in the info.destination field
         //
 
-        if (sizeof(entry->info.destination.addr4) >= to->sa_len)
-        {
+        if (sizeof(entry->info.destination.addr4) >= to->sa_len) {
             bcopy(to, &(entry->info.destination.addr4), to->sa_len);
 
             //
             // Ensure port is in host format
             //
 
-            entry->info.destination.addr4.sin_port = ntohs(entry->info.destination.addr4.sin_port);
+            entry->info.destination.addr4.sin_port =
+                ntohs(entry->info.destination.addr4.sin_port);
         }
-    }
-    else if (AF_INET6 == entry->protocol)
-    {
+    } else if (AF_INET6 == entry->protocol) {
         //
         // Save the destination address in the info.destination field
         //
 
-        if (sizeof(entry->info.destination.addr6) >= to->sa_len)
-        {
+        if (sizeof(entry->info.destination.addr6) >= to->sa_len) {
             bcopy(to, &(entry->info.destination.addr6), to->sa_len);
 
             //
             // Ensure port is in host format
             //
 
-            entry->info.destination.addr6.sin6_port = ntohs(entry->info.destination.addr6.sin6_port);
+            entry->info.destination.addr6.sin6_port =
+                ntohs(entry->info.destination.addr6.sin6_port);
         }
     }
 
@@ -1397,7 +1659,7 @@ sflt_connect_out(
 }
 
 //
-// sflt_filter.sflt_bind_func is called before performing a bind operation on a socket.
+// sflt_filter.sflt_bind_func is called before performing a bind operation on a socket
 //
 
 static
@@ -1409,48 +1671,47 @@ sflt_bind(
     )
 {
     errno_t result = 0;
-    struct log_entry *entry = get_entry_from_cookie(cookie);
+    struct sflt_log_entry *entry;
+
+    entry = get_entry_from_cookie(cookie);
+    if (!entry)
+        return result;
 
     //
     // Verify that the address is AF_INET or AF_INET6
     //
 
-    assert ((AF_INET == to->sa_family) || (AF_INET6 == to->sa_family));
-
-    if (!entry) return result;
-
-    if (AF_INET == entry->protocol)
-    {
+    assert ((AF_INET == to->sa_family) ||
+            (AF_INET6 == to->sa_family));
+    if (AF_INET == entry->protocol) {
         //
         // Save the source address in the info.source field
         //
 
-        if (sizeof(entry->info.source.addr4) >= to->sa_len)
-        {
+        if (sizeof(entry->info.source.addr4) >= to->sa_len) {
             bcopy(to, &(entry->info.source.addr4), to->sa_len);
 
             //
             // Ensure port is in host format
             //
 
-            entry->info.source.addr4.sin_port = ntohs(entry->info.source.addr4.sin_port);
+            entry->info.source.addr4.sin_port =
+                ntohs(entry->info.source.addr4.sin_port);
         }
-    }
-    else if (AF_INET6 == entry->protocol)
-    {
+    } else if (AF_INET6 == entry->protocol) {
         //
         // Save the source address in the info.source field
         //
 
-        if (sizeof(entry->info.source.addr6) >= to->sa_len)
-        {
+        if (sizeof(entry->info.source.addr6) >= to->sa_len) {
             bcopy(to, &(entry->info.source.addr6), to->sa_len);
 
             //
             // Ensure port is in host format
             //
 
-            entry->info.source.addr6.sin6_port = ntohs(entry->info.source.addr6.sin6_port);
+            entry->info.source.addr6.sin6_port =
+                ntohs(entry->info.source.addr6.sin6_port);
         }
     }
 
@@ -1464,10 +1725,9 @@ get_socket_option_name(
     int option
     )
 {
-    char *name = NULL;
+    char *name;
 
-    switch (option)
-    {
+    switch (option) {
     case SO_ACCEPTCONN:
         name = "SO_ACCEPTCONN";  // socket has had listen()
         break;
@@ -1558,7 +1818,7 @@ get_socket_option_name(
 #endif
 
 //
-// sflt_filter.sflt_setoption_func is called before performing setsockopt on a socket.
+// sflt_filter.sflt_setoption_func is called before performing setsockopt on a socket
 //
 
 static
@@ -1570,19 +1830,24 @@ sflt_set_option(
     )
 {
     errno_t result = 0;
-    struct log_entry *entry = get_entry_from_cookie(cookie);
+    struct sflt_log_entry *entry;
 
-    if (!entry) return result;
+    entry = get_entry_from_cookie(cookie);
+    if (!entry)
+        return result;
 
 #if SFLT_TRAFFIC_TROUBLESHOOTING
-    if (SOL_SOCKET == sockopt_level(option))
-    {
+    if (SOL_SOCKET == sockopt_level(option)) {
         if (entry->tcp_ipv4_attached)
             printf("[%s.kext] : sflt_set_option(%s - socket=0x%X), option=%s.\n",
-                   DRIVER_NAME, "tcp_ipv4", (unsigned int) socket, get_socket_option_name(sockopt_name(option)));
+                   DRIVER_NAME, "tcp_ipv4",
+                   (unsigned int) socket,
+                   get_socket_option_name(sockopt_name(option)));
         else if (entry->udp_ipv4_attached)
             printf("[%s.kext] : sflt_set_option(%s - socket=0x%X), option=%s.\n",
-                   DRIVER_NAME, "udp_ipv4", (unsigned int) socket, get_socket_option_name(sockopt_name(option)));
+                   DRIVER_NAME, "udp_ipv4",
+                   (unsigned int) socket,
+                   get_socket_option_name(sockopt_name(option)));
     }
 #endif
 
@@ -1590,7 +1855,7 @@ sflt_set_option(
 }
 
 //
-// sflt_filter.sflt_getoption_func is called before performing getsockopt on a socket.
+// sflt_filter.sflt_getoption_func is called before performing getsockopt on a socket
 //
 
 static
@@ -1602,19 +1867,24 @@ sflt_get_option(
     )
 {
     errno_t result = 0;
-    struct log_entry *entry = get_entry_from_cookie(cookie);
+    struct sflt_log_entry *entry;
 
-    if (!entry) return result;
+    entry = get_entry_from_cookie(cookie);
+    if (!entry)
+        return result;
 
 #if SFLT_TRAFFIC_TROUBLESHOOTING
-    if (SOL_SOCKET == sockopt_level(option))
-    {
+    if (SOL_SOCKET == sockopt_level(option)) {
         if (entry->tcp_ipv4_attached)
             printf("[%s.kext] : sflt_get_option(%s - socket=0x%X), option=%s.\n",
-                   DRIVER_NAME, "tcp_ipv4", (unsigned int) socket, get_socket_option_name(sockopt_name(option)));
+                   DRIVER_NAME, "tcp_ipv4",
+                   (unsigned int) socket,
+                   get_socket_option_name(sockopt_name(option)));
         else if (entry->udp_ipv4_attached)
             printf("[%s.kext] : sflt_get_option(%s - socket=0x%X), option=%s.\n",
-                   DRIVER_NAME, "udp_ipv4", (unsigned int) socket, get_socket_option_name(sockopt_name(option)));
+                   DRIVER_NAME, "udp_ipv4",
+                   (unsigned int) socket,
+                   get_socket_option_name(sockopt_name(option)));
     }
 #endif
 
@@ -1622,7 +1892,7 @@ sflt_get_option(
 }
 
 //
-// sflt_filter.sflt_listen_func is called before performing listen on a socket.
+// sflt_filter.sflt_listen_func is called before performing listen on a socket
 //
 
 static
@@ -1633,15 +1903,21 @@ sflt_listen(
     )
 {
     errno_t result = 0;
-    struct log_entry *entry = get_entry_from_cookie(cookie);
+    struct sflt_log_entry *entry;
 
-    if (!entry) return result;
+    entry = get_entry_from_cookie(cookie);
+    if (!entry)
+        return result;
 
 #if SFLT_TRAFFIC_TROUBLESHOOTING
     if (entry->tcp_ipv4_attached)
-        printf("[%s.kext] : sflt_listen(%s - socket=0x%X).\n", DRIVER_NAME, "tcp_ipv4", (unsigned int) socket);
+        printf("[%s.kext] : sflt_listen(%s - socket=0x%X).\n",
+               DRIVER_NAME, "tcp_ipv4",
+               (unsigned int) socket);
     else if (entry->udp_ipv4_attached)
-        printf("[%s.kext] : sflt_listen(%s - socket=0x%X).\n", DRIVER_NAME, "udp_ipv4", (unsigned int) socket);
+        printf("[%s.kext] : sflt_listen(%s - socket=0x%X).\n",
+               DRIVER_NAME, "udp_ipv4",
+               (unsigned int) socket);
 #endif
 
     return result;
@@ -1651,8 +1927,7 @@ sflt_listen(
 // Dispatch vector for TCP IPv4 socket functions
 //
 
-static struct sflt_filter sflt_tcp_ipv4 =
-{
+static struct sflt_filter sflt_tcp_ipv4 = {
     SFLT_TCP_IPV4_HANDLE, // sflt_handle
     SFLT_GLOBAL,          // sflt_flags
     SFLT_BUNDLE_ID,       // sflt_name
@@ -1678,8 +1953,7 @@ static struct sflt_filter sflt_tcp_ipv4 =
 // Dispatch vector for UDP IPv4 socket functions
 //
 
-static struct sflt_filter sflt_udp_ipv4 =
-{
+static struct sflt_filter sflt_udp_ipv4 = {
     SFLT_UDP_IPV4_HANDLE, // sflt_handle
     SFLT_GLOBAL,          // sflt_flags
     SFLT_BUNDLE_ID,       // sflt_name
@@ -1709,30 +1983,36 @@ sflt_initialization(
 {
     kern_return_t status = KERN_SUCCESS;
 
-    if (flag)
-    {
+    if (flag) {
+        if (!glock_group)
+            return KERN_FAILURE;
+
+        sflt_lock = lck_mtx_alloc_init(glock_group,
+                                       LCK_ATTR_NULL);
+        if (!sflt_lock)
+            return KERN_FAILURE;
+
         //
         // Initialize the queues which we are going to use
         //
 
-        TAILQ_INIT(&glist_active);
-        TAILQ_INIT(&glist_inactive);
+        TAILQ_INIT(&sflt_active_list);
+        TAILQ_INIT(&sflt_inactive_list);
 
         //
         // Register the filter with AF_INET domain, SOCK_STREAM type and TCP protocol
         //
 
-        status = sflt_register(&sflt_tcp_ipv4, AF_INET, SOCK_STREAM, IPPROTO_TCP);
-
-        if (!status)
-        {
-            OSCompareAndSwap(0, 1, &gfilter_stats.tcp_ipv4_registered);
-        }
-        else
-        {
+        status = sflt_register(&sflt_tcp_ipv4,
+                               AF_INET, SOCK_STREAM,
+                               IPPROTO_TCP);
+        if (!status) {
+            OSCompareAndSwap(0, 1,
+                             &filter_stats.tcp_ipv4_registered);
+        } else {
         #if SFLT_TROUBLESHOOTING
-            printf("[%s.kext] : Error! sflt_register(%s - %s) failed, status=%d.\n",
-                   DRIVER_NAME, "tcp_ipv4", flag ? "true" : "false", status);
+            printf("[%s.kext] : Error! sflt_register(%s) failed, status=%d.\n",
+                   DRIVER_NAME, "tcp_ipv4", status);
         #endif
 
             return status;
@@ -1742,82 +2022,115 @@ sflt_initialization(
         // Register the filter with AF_INET domain, SOCK_DGRAM type and UDP protocol
         //
 
-        status = sflt_register(&sflt_udp_ipv4, AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-
-        if (!status)
-        {
-            OSCompareAndSwap(0, 1, &gfilter_stats.udp_ipv4_registered);
+        status = sflt_register(&sflt_udp_ipv4,
+                               AF_INET, SOCK_DGRAM,
+                               IPPROTO_UDP);
+        if (!status) {
+            OSCompareAndSwap(0, 1,
+                             &filter_stats.udp_ipv4_registered);
 
             //
             // Socket filter enabled
             //
 
-            lck_mtx_lock(gnetwork_filter_lock);
+            lck_mtx_lock(sflt_lock);
 
-            gfilter_stats.filter_enabled = TRUE;
+            filter_stats.filter_enabled = TRUE;
 
-            lck_mtx_unlock(gnetwork_filter_lock);
-        }
-        else
-        {
+            lck_mtx_unlock(sflt_lock);
         #if SFLT_TROUBLESHOOTING
-            printf("[%s.kext] : Error! sflt_register(%s - %s) failed, status=%d.\n",
-                   DRIVER_NAME, "udp_ipv4", flag ? "true" : "false", status);
+        } else {
+            printf("[%s.kext] : Error! sflt_register(%s) failed, status=%d.\n",
+                   DRIVER_NAME, "udp_ipv4", status);
         #endif
-
-            return status;
         }
-    }
-    else
-    {
-        if (!gfilter_stats.tcp_ipv4_registered &&
-            !gfilter_stats.udp_ipv4_registered) return status;
-
+    } else {
         //
-        // Shut down the filter
+        // Shut down the filters
         //
 
-        if (gnetwork_filter_lock) lck_mtx_lock(gnetwork_filter_lock);
+        if (sflt_lock) {
+            lck_mtx_lock(sflt_lock);
 
-        gfilter_stats.filter_enabled = FALSE;
+            if (filter_stats.filter_enabled)
+                filter_stats.filter_enabled = FALSE;
 
-        if (gnetwork_filter_lock) lck_mtx_unlock(gnetwork_filter_lock);
+            lck_mtx_unlock(sflt_lock);
+        }
 
-        status = sflt_unregister(SFLT_TCP_IPV4_HANDLE);
+        struct timespec timer;
 
-        if (!status)
-        {
+        if (filter_stats.tcp_ipv4_registered) {
+            status = sflt_unregister(SFLT_TCP_IPV4_HANDLE);
+            if (!status) {
+                OSCompareAndSwap(1, 0,
+                                 &filter_stats.tcp_ipv4_registered);
+
+                do {
+                    timer.tv_sec = 0;
+                    timer.tv_nsec = 100000;
+
+                    msleep(&filter_stats.tcp_ipv4_in_use,
+                           NULL, PUSER, "sflt_unregister",
+                           &timer);
+                } while (filter_stats.tcp_ipv4_in_use);
+            } else {
+            #if SFLT_TROUBLESHOOTING
+                printf("[%s.kext] : Error! sflt_unregister(%s) failed, status=%d.\n",
+                       DRIVER_NAME, "tcp_ipv4", status);
+            #endif
+
+                goto out_sflt_unregister;
+            }
+        }
+
+        if (filter_stats.udp_ipv4_registered) {
             status = sflt_unregister(SFLT_UDP_IPV4_HANDLE);
+            if (!status) {
+                OSCompareAndSwap(1, 0,
+                                 &filter_stats.udp_ipv4_registered);
+
+                do {
+                    timer.tv_sec = 0;
+                    timer.tv_nsec = 100000;
+
+                    msleep(&filter_stats.udp_ipv4_in_use,
+                           NULL, PUSER, "sflt_unregister",
+                           &timer);
+                } while (filter_stats.udp_ipv4_in_use);
+            } else {
+            #if SFLT_TROUBLESHOOTING
+                printf("[%s.kext] : Error! sflt_unregister(%s) failed, status=%d.\n",
+                       DRIVER_NAME, "udp_ipv4", status);
+            #endif
+
+                goto out_sflt_unregister;
+            }
         }
 
-        struct timespec second = {0};
+    out_sflt_unregister:
+        if (sflt_lock) {
+            //
+            // We don't have to do this
+            //
 
-        do
-        {
-            second.tv_sec = 0;
-            second.tv_nsec = 100;
+            sflt_remove_all(TRUE);
 
-            msleep(&gfilter_stats.tcp_ipv4_in_use, NULL, PUSER, "remove_filter", &second);
-        } while (gfilter_stats.tcp_ipv4_in_use);
+            if (glock_group) {
+                lck_mtx_free(sflt_lock,
+                             glock_group);
 
-        do
-        {
-            second.tv_sec = 0;
-            second.tv_nsec = 100;
-
-            msleep(&gfilter_stats.udp_ipv4_in_use, NULL, PUSER, "remove_filter", &second);
-        } while (gfilter_stats.udp_ipv4_in_use);
-
-        //
-        // We don't have to do this
-        //
-
-        sflt_remove_all(TRUE);
+                sflt_lock = NULL;
+            }
+        }
 
     #if SFLT_TROUBLESHOOTING
         printf("[%s.kext] : Stop socket monitoring (tcp_ipv4_in_use=%d, tcp_ipv4_total=%d, udp_ipv4_in_use=%d, udp_ipv4_total=%d).\n",
-               DRIVER_NAME, gfilter_stats.tcp_ipv4_in_use, gfilter_stats.tcp_ipv4_total,
-               gfilter_stats.udp_ipv4_in_use, gfilter_stats.udp_ipv4_total);
+               DRIVER_NAME,
+               filter_stats.tcp_ipv4_in_use,
+               filter_stats.tcp_ipv4_total,
+               filter_stats.udp_ipv4_in_use,
+               filter_stats.udp_ipv4_total);
     #endif
     }
 
