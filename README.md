@@ -33,7 +33,7 @@ Welcome to contribute by creating issues or sending pull requests. See Contribut
 Kemon is licensed under the Apache License 2.0. See the LICENSE file.
 
 ## References
-[1] https://www.defcon.org/html/defcon-26/dc-26-speakers.html#Wang
-[2] https://support.apple.com/en-us/HT208331
-[3] https://support.apple.com/en-us/HT209193
+- 1. https://www.defcon.org/html/defcon-26/dc-26-speakers.html#Wang
+- 2. https://support.apple.com/en-us/HT208331
+- 3. https://support.apple.com/en-us/HT209193
 
