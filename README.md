@@ -2,8 +2,8 @@
 An Open-Source Pre and Post Callback-Based Framework for macOS Kernel Monitoring.
 
 ## What is Kemon?
-An open-source Pre and Post callback-based framework for macOS kernel monitoring.
-With the power of Kemon, we can easily implement LPC communication monitoring, MAC policy filtering, kernel driver firewall, etc. In general, from an attacker's perspective, this framework can help achieve more powerful Rootkit. From the perspective of defense, Kemon can help construct more granular monitoring capabilities. I also implemented a kernel fuzzer [1] through this framework, which helped me find many vulnerabilities, such as: CVE-2017-7155, CVE-2017-7163, CVE-2017-13883 [2] and CVE-2018-4350, CVE-2018-4396, CVE-2018-4418 [3], etc.
+An open-source Pre and Post callback-based framework for macOS kernel monitoring [1].
+With the power of Kemon, we can easily implement LPC communication monitoring, MAC policy filtering, kernel driver firewall, etc. In general, from an attacker's perspective, this framework can help achieve more powerful Rootkit. From the perspective of defense, Kemon can help construct more granular monitoring capabilities. I also implemented a kernel fuzzer [2] through this framework, which helped me find many vulnerabilities, such as: CVE-2017-7155, CVE-2017-7163, CVE-2017-13883 [3] and CVE-2018-4350, CVE-2018-4396, CVE-2018-4418 [4], etc.
 
 ## Supported Features
 Kemon's features include：
@@ -33,7 +33,8 @@ Welcome to contribute by creating issues or sending pull requests. See Contribut
 Kemon is licensed under the Apache License 2.0. See the LICENSE file.
 
 ## References
-1. https://www.defcon.org/html/defcon-26/dc-26-speakers.html#Wang
-2. https://support.apple.com/en-us/HT208331
-3. https://support.apple.com/en-us/HT209193
+1. https://www.blackhat.com/us-18/arsenal/schedule/#kemon-an-open-source-pre-and-post-callback-based-framework-for-macos-kernel-monitoring-12085
+2. https://www.defcon.org/html/defcon-26/dc-26-speakers.html#Wang
+3. https://support.apple.com/en-us/HT208331
+4. https://support.apple.com/en-us/HT209193
 
