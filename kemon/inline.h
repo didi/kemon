@@ -146,6 +146,14 @@ struct osstring_macos_mojave {
     unsigned int length;
 };
 
+struct osstring_macos_catalina {
+    void *osobject;
+    unsigned long retain_count;
+    char *string;
+    unsigned int flags;
+    unsigned int length;
+};
+
 //
 // OSKext
 //
@@ -156,7 +164,21 @@ struct oskext {
     void *info_dict;
     void *bundle_id;
     void *path;
-    void *executable_path;
+    void *executable_rel_path;
+    unsigned long version;
+    unsigned long compatible_version;
+    unsigned long load_tag;
+    kmod_info_t *kmod_info;
+};
+
+struct oskext_macos_catalina {
+    void *osobject;
+    unsigned long retain_count;
+    void *info_dict;
+    void *bundle_id;
+    void *path;
+    void *executable_rel_path;
+    void *user_executable_rel_path;
     unsigned long version;
     unsigned long compatible_version;
     unsigned long load_tag;
@@ -199,7 +221,7 @@ void
 show_mac_policy_handlers(
     struct mac_policy_ops *ops
     );
-#endif // MAC_POLICY_SHADOW_WALKER
+#endif
 
 //
 // This function is called to register a policy with the MAC framework

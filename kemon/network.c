@@ -518,7 +518,7 @@ sflt_detach_ipv4(
     } else if (AF_INET == entry->protocol &&
                udp_attached) {
         //
-        // We don't care about udp detach traffic in this version
+        // We don't care about UDP detach traffic in this version
         //
 
         ;
@@ -2071,7 +2071,7 @@ sflt_initialization(
                     timer.tv_nsec = 100000;
 
                     msleep(&filter_stats.tcp_ipv4_in_use,
-                           NULL, PUSER, "sflt_unregister",
+                           NULL, PUSER, "sflt_unregister_tcp_ipv4",
                            &timer);
                 } while (filter_stats.tcp_ipv4_in_use);
             } else {
@@ -2095,7 +2095,7 @@ sflt_initialization(
                     timer.tv_nsec = 100000;
 
                     msleep(&filter_stats.udp_ipv4_in_use,
-                           NULL, PUSER, "sflt_unregister",
+                           NULL, PUSER, "sflt_unregister_udp_ipv4",
                            &timer);
                 } while (filter_stats.udp_ipv4_in_use);
             } else {

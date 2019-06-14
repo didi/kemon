@@ -33,7 +33,8 @@ enum os_version {
     OS_X_EL_CAPITAN,
     MACOS_SIERRA,
     MACOS_HIGH_SIERRA,
-    MACOS_MOJAVE
+    MACOS_MOJAVE,
+    MACOS_CATALINA
 };
 
 //

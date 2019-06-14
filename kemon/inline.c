@@ -914,9 +914,13 @@ oskext_start_prologue_handler(
     struct osstring_macos_sierra *path_macos_sierra = NULL;
     struct osstring_macos_high_sierra *path_macos_high_sierra = NULL;
     struct osstring_macos_mojave *path_macos_mojave = NULL;
+    struct osstring_macos_catalina *path_macos_catalina = NULL;
 
     if (kext) {
-        info = kext->kmod_info;
+        if (MACOS_CATALINA == gmacOS_major)
+            info = ((struct oskext_macos_catalina *) kext)->kmod_info;
+        else
+            info = kext->kmod_info;
 
         if (OS_X_EL_CAPITAN == gmacOS_major)
             path_el_capitan = kext->path;
@@ -926,12 +930,15 @@ oskext_start_prologue_handler(
             path_macos_high_sierra = kext->path;
         else if (MACOS_MOJAVE == gmacOS_major)
             path_macos_mojave = kext->path;
+        else if (MACOS_CATALINA == gmacOS_major)
+            path_macos_catalina =
+                ((struct oskext_macos_catalina *) kext)->path;
         else
             info = NULL;
 
         if ((path_el_capitan || path_macos_sierra ||
-            path_macos_high_sierra || path_macos_mojave) &&
-            info) {
+            path_macos_high_sierra || path_macos_mojave ||
+            path_macos_catalina) && info) {
             size_t data_length;
 
             message = OSMalloc((uint32_t) sizeof(*message),
@@ -998,6 +1005,13 @@ oskext_start_prologue_handler(
                     data_length = strlen((const char *) path_macos_mojave->string);
                     memcpy(message->module_path,
                            (const char *) path_macos_mojave->string,
+                           (data_length <= MAXPATHLEN - 1) ?
+                           data_length : MAXPATHLEN - 1);
+                } else if (MACOS_CATALINA == gmacOS_major &&
+                           path_macos_catalina) {
+                    data_length = strlen((const char *) path_macos_catalina->string);
+                    memcpy(message->module_path,
+                           (const char *) path_macos_catalina->string,
                            (data_length <= MAXPATHLEN - 1) ?
                            data_length : MAXPATHLEN - 1);
                 }

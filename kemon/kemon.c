@@ -817,6 +817,13 @@ check_process_namespace_fsctl(
         return FALSE;
 
     //
+    // For macOS 10.15 Beta Catalina (19A471t)
+    //
+
+    if (MACOS_CATALINA == gmacOS_major)
+        return FALSE;
+
+    //
     // Holds the result of the decoding
     //
 
@@ -2614,6 +2621,12 @@ check_os_version(
 
     case MACOS_MOJAVE:
         printf("[%s.kext] : kernel version=%d.%d - macOS Mojave, %s.\n",
+               DRIVER_NAME, *major, *minor, string);
+        status = TRUE;
+        break;
+
+    case MACOS_CATALINA:
+        printf("[%s.kext] : kernel version=%d.%d - macOS Catalina, %s.\n",
                DRIVER_NAME, *major, *minor, string);
         status = TRUE;
         break;
