@@ -1,6 +1,15 @@
 # Kemon
 An Open-Source Pre and Post Callback-Based Framework for macOS Kernel Monitoring.
 
+[ Breaking News - 08/28/2019 ]
+
+macOS Catalina 10.15 Beta 7 Release Notes
+https://developer.apple.com/documentation/macos_release_notes/macos_catalina_10_15_beta_7_release_notes
+
+Endpoint Security
+Deprecations
+ - The kauth API has been removed. (50419013)
+
 ## What is Kemon?
 An open-source Pre and Post callback-based framework for macOS kernel monitoring [1] [2].
 With the power of Kemon, we can easily implement LPC communication monitoring, MAC policy filtering, kernel driver firewall, etc. In general, from an attacker's perspective, this framework can help achieve more powerful Rootkit. From the perspective of defense, Kemon can help construct more granular monitoring capabilities. I also implemented a kernel fuzzer [3] through this framework, which helped me find many vulnerabilities, such as: CVE-2017-7155, CVE-2017-7163, CVE-2017-13883 [4] and CVE-2018-4350, CVE-2018-4396, CVE-2018-4418 [5], etc.
