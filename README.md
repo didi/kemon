@@ -9,6 +9,7 @@ https://developer.apple.com/documentation/macos_release_notes/macos_catalina_10_
 Endpoint Security
 Deprecations
  - The kauth API has been removed. (50419013)
+ /* After testing, I found that these Kauth interfaces are not really deleted, and Kemon still works. But I think this release note means that the door to the macOS kernel is closing. (08/28/2019) */
 
 ## What is Kemon?
 An open-source Pre and Post callback-based framework for macOS kernel monitoring [1] [2].
