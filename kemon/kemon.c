@@ -817,13 +817,6 @@ check_process_namespace_fsctl(
         return FALSE;
 
     //
-    // For macOS 10.15 Beta Catalina (19A471t)
-    //
-
-    if (MACOS_CATALINA == gmacOS_major)
-        return FALSE;
-
-    //
     // Holds the result of the decoding
     //
 
@@ -1395,35 +1388,56 @@ listener_scope_fileop(
                                              (rbp_register + sizeof(void *)) + delta;
                     }
 
-                    if (check_vn_open_auth((unsigned char *) target_routine)) {
-                        //
-                        // Case 1. (bsd\vfs\vfs_vnops.c):
-                        // open1 -> vn_open_auth -> vn_open_auth_finish -> kauth_authorize_fileop
-                        //
+                    //
+                    // For macOS 10.15 Catalina
+                    //
 
-                        unsigned int *fmodep = (unsigned int *) *(unsigned long *)
-                                                   (rbp_register - rbp_offset);
-
-                        fmode = *fmodep;
-                    } else if (check_process_namespace_fsctl((unsigned char *) target_routine)) {
-                        //
-                        // Case 2. (bsd\vfs\vfs_syscalls.c):
-                        // fsctl_internal -> process_namespace_fsctl -> wait_for_namespace_event ->
-                        // vn_open_with_vp -> kauth_authorize_fileop
-                        //
-
-                        OSIncrementAtomic(&process_namespace_fsctl_count);
+                    if (process_namespace_fsctl_removed) {
+                        if (!rbp_offset) {
+                            check_vn_open_auth((unsigned char *) target_routine);
+                        }
 
                         //
-                        // We don't really care about this case in the current version
+                        // The offset is a fixed value
                         //
 
-                    #if KAUTH_TROUBLESHOOTING
-                        printf("[%s.kext] : process_namespace_fsctl_count=%d.\n",
-                               DRIVER_NAME, process_namespace_fsctl_count);
-                    #endif
+                        if (rbp_offset && !unknown_platform_fileop_open) {
+                            unsigned int *fmodep = (unsigned int *) *(unsigned long *)
+                                                       (rbp_register - rbp_offset);
+
+                            fmode = *fmodep;
+                        }
                     } else {
-                        unknown_platform_fileop_open = TRUE;
+                        if (check_vn_open_auth((unsigned char *) target_routine)) {
+                            //
+                            // Case 1. (bsd\vfs\vfs_vnops.c):
+                            // open1 -> vn_open_auth -> vn_open_auth_finish -> kauth_authorize_fileop
+                            //
+
+                            unsigned int *fmodep = (unsigned int *) *(unsigned long *)
+                                                       (rbp_register - rbp_offset);
+
+                            fmode = *fmodep;
+                        } else if (check_process_namespace_fsctl((unsigned char *) target_routine)) {
+                            //
+                            // Case 2. (bsd\vfs\vfs_syscalls.c):
+                            // fsctl_internal -> process_namespace_fsctl -> wait_for_namespace_event ->
+                            // vn_open_with_vp -> kauth_authorize_fileop
+                            //
+
+                            OSIncrementAtomic(&process_namespace_fsctl_count);
+
+                            //
+                            // We don't really care about this case in the current version
+                            //
+
+                        #if KAUTH_TROUBLESHOOTING
+                            printf("[%s.kext] : process_namespace_fsctl_count=%d.\n",
+                                   DRIVER_NAME, process_namespace_fsctl_count);
+                        #endif
+                        } else {
+                            unknown_platform_fileop_open = TRUE;
+                        }
                     }
                 } else {
                     unknown_platform_fileop_open = TRUE;
@@ -2075,6 +2089,10 @@ remove_listener(
     //
 
     if (kauth_listener) {
+        //
+        // MacOSX10.15.SDK: 'kauth_unlisten_scope' has been explicitly marked deprecated
+        //
+
         kauth_unlisten_scope(kauth_listener);
 
         kauth_listener = NULL;
@@ -2172,6 +2190,10 @@ install_listener(
         } else {
             kauth_callback = listener_scope_unknown;
         }
+
+        //
+        // MacOSX10.15.SDK: 'kauth_listen_scope' has been explicitly marked deprecated
+        //
 
         assert (!kauth_listener);
         kauth_listener = kauth_listen_scope(kauth_listener_scope,
@@ -2628,7 +2650,12 @@ check_os_version(
     case MACOS_CATALINA:
         printf("[%s.kext] : kernel version=%d.%d - macOS Catalina, %s.\n",
                DRIVER_NAME, *major, *minor, string);
-        status = TRUE;
+
+        //
+        // Tested from macOS Catalina 10.15 Beta (19A471t) to macOS Catalina 10.15.1 Beta (19B68f)
+        //
+
+        status = process_namespace_fsctl_removed = TRUE;
         break;
 
     default:
@@ -2674,7 +2701,7 @@ kemon_start(
         kmod_info_t *kmod_item = gkmod_info = kmod_info;
 
         //
-        // Direct Kernel Object Manipulation (DKOM) is not a good idea
+        // Warning: Direct Kernel Object Manipulation (DKOM) is not a good idea
         //
 
         do {

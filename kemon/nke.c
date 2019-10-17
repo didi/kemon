@@ -49,7 +49,7 @@ static kern_ctl_ref ctl_reference;
 
 static thread_t nke_thread_reference = THREAD_NULL;
 
-static boolean_t nke_disconnecting;
+static UInt32 nke_disconnecting;
 
 //
 // Statistic
@@ -59,7 +59,7 @@ static SInt32 enqueued_event;
 static SInt32 lost_event;
 
 //
-// The ctl_setopt_func is used to handle set socket option
+// The ctl_setopt_func is used to handle client set socket option
 // calls for the SYSPROTO_CONTROL option level
 //
 
@@ -960,7 +960,7 @@ nke_thread(
             lck_mtx_unlock(nke_lock);
 
             //
-            // Send event to user space
+            // Send the event to user space
             //
 
             if (entry) {
@@ -1056,7 +1056,7 @@ nke_initialization(
             return KERN_FAILURE;
 
         //
-        // Initialize the queues which we are going to use
+        // Initialize the queue which we are going to use
         //
 
         TAILQ_INIT(&nke_list);

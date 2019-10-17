@@ -29,6 +29,7 @@ enum driver_version {
     ALPHA_VERSION_08_FEB_2017 = 0x01000001,
     ALPHA_VERSION_12_DEC_2018 = 0x01000010,
     ALPHA_VERSION_05_JUN_2019 = 0x01000011,
+    ALPHA_VERSION_01_OCT_2019 = 0x01000012,
     RELEASE_VERSION
 };
 
@@ -69,7 +70,7 @@ enum driver_version {
 // For macOS 10.14 Mojave
 //
 
-#define SNPRINTF_LENGTH_LIMIT 0xF2
+#define SNPRINTF_LENGTH_LIMIT 0xF0
 
 //
 // Hex printf

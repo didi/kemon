@@ -110,6 +110,12 @@ static SInt32 kauth_activation_count;
 #endif
 
 //
+// For macOS 10.15 Catalina
+//
+
+static boolean_t process_namespace_fsctl_removed;
+
+//
 // vnode_action_info describes one of the action bits in the vnode scope's action field
 //
 

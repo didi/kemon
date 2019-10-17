@@ -507,7 +507,7 @@ get_module_info(
         kmod_info_t *kmod_item = gkmod_info;
 
         //
-        // Direct Kernel Object Manipulation (DKOM) is not a good idea
+        // Warning: Direct Kernel Object Manipulation (DKOM) is not a good idea
         //
 
         do {

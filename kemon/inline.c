@@ -83,19 +83,19 @@ disable_write_protection(
 
     lck_mtx_lock(cr0_lock);
 
-    unsigned long local_cr0 = cr0 = get_cr0();
+    unsigned long tmp_cr0 = cr0 = get_cr0();
 
     //
     // Remove the CR0_WP bit
     //
 
-    local_cr0 &= ~CR0_WP;
+    tmp_cr0 &= ~CR0_WP;
 
     //
     // Write CR0 back
     //
 
-    set_cr0(local_cr0);
+    set_cr0(tmp_cr0);
 }
 
 //
@@ -107,11 +107,15 @@ void
 enable_write_protection(
     )
 {
+    unsigned long tmp_cr0 = cr0;
+
     //
     // Write CR0 back
     //
 
-    set_cr0(cr0);
+    set_cr0(tmp_cr0);
+
+    cr0 = 0;
 
     lck_mtx_unlock(cr0_lock);
 }
@@ -206,6 +210,9 @@ mac_policy_register_prologue_handler(
     void *xd
     )
 {
+#pragma unused(handlep)
+#pragma unused(xd)
+
     if (mpc) {
     #if MAC_TROUBLESHOOTING
         printf("[%s.kext] : In the mac_policy_register callback handler. %s\n",
@@ -247,7 +254,8 @@ mac_policy_register_prologue_handler(
         }
 
         //
-        // Please note that the MAC_POLICY_OPS_VERSION is 55 (xnu-4903.221.2)
+        // Please note that the current MAC_POLICY_OPS_VERSION is 55 (xnu-4903.221.2)
+        // https://github.com/apple/darwin-xnu/tree/xnu-4903.221.2
         //
 
         if (mpc->mpc_ops)
@@ -783,7 +791,7 @@ oskext_call_pre_handler(
 {
 #pragma unused(data)
 
-    char kext_buffer[0x100];
+    char kext_buffer[0x120];
     unsigned long kext_length;
 
     kext_length = sizeof(kext_buffer);

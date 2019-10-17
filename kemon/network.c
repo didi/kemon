@@ -1374,18 +1374,28 @@ sflt_data_out(
                                 // Tell the user about this request
                                 //
 
+                                int ppid = proc_selfppid();
+                                size_t name_length = strlen("NULL (ZOMBIE STATE)");
+
+                            #if SFLT_TRAFFIC_TROUBLESHOOTING
                                 char proc_name_pid[MAXPATHLEN];
                                 memset(proc_name_pid, 0, MAXPATHLEN);
+
+                                memcpy(proc_name_pid,
+                                       "NULL (ZOMBIE STATE)",
+                                       name_length);
                                 proc_name(entry->info.pid,
                                           proc_name_pid, MAXPATHLEN);
 
-                                int ppid = proc_selfppid();
                                 char proc_name_ppid[MAXPATHLEN];
                                 memset(proc_name_ppid, 0, MAXPATHLEN);
+
+                                memcpy(proc_name_ppid,
+                                       "NULL (ZOMBIE STATE)",
+                                       name_length);
                                 proc_name(ppid,
                                           proc_name_ppid, MAXPATHLEN);
 
-                            #if SFLT_TRAFFIC_TROUBLESHOOTING
                                 printf("[%s.kext] : <DNS Query> %s:%d->%s:%d, uid=%d, process(pid %d)=%s, parent(ppid %d)=%s, query=%s.\n",
                                        DRIVER_NAME,
                                        entry->info.source.addr4.sin_addr.s_addr ?
@@ -1415,6 +1425,13 @@ sflt_data_out(
 
                                     microtime(&(message->header.event_time));
                                     message->header.type = NETWORK_UDP_DNS_QUERY;
+
+                                    memcpy(message->header.proc_name_pid,
+                                           "NULL (ZOMBIE STATE)",
+                                           name_length);
+                                    memcpy(message->header.proc_name_ppid,
+                                           "NULL (ZOMBIE STATE)",
+                                           name_length);
 
                                     message->header.pid = entry->info.pid;
                                     proc_name(message->header.pid,

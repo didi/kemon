@@ -538,16 +538,16 @@ struct mac_policy_ops {
 //
 
 struct mac_policy_conf {
-    char *mpc_name;                     // policy name
-    char *mpc_fullname;                 // full name
-    char const * const *mpc_labelnames; // managed label namespaces
-    unsigned int mpc_labelname_count;   // number of managed label namespaces
-    struct mac_policy_ops *mpc_ops;     // operation vector
-    int mpc_loadtime_flags;             // load time flags
-    int *mpc_field_off;                 // label slot
-    int mpc_runtime_flags;              // run time flags
-    struct mac_policy_conf *mpc_list;   // list reference
-    void *mpc_data;                     // module data
+    char *mpc_name;                    // policy name
+    char *mpc_fullname;                // full name
+    char const *const *mpc_labelnames; // managed label namespaces
+    unsigned int mpc_labelname_count;  // number of managed label namespaces
+    struct mac_policy_ops *mpc_ops;    // operation vector
+    int mpc_loadtime_flags;            // load time flags
+    int *mpc_field_off;                // label slot
+    int mpc_runtime_flags;             // run time flags
+    struct mac_policy_conf *mpc_list;  // list reference
+    void *mpc_data;                    // module data
 };
 
 //

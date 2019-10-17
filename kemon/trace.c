@@ -36,9 +36,9 @@ hex_printf(
     unsigned long line, index, character;
 
     if (!buffer || !length ||
-        ((flag & HEX_PRINTF_W) && (length % sizeof(int16_t))) ||
-        ((flag & HEX_PRINTF_D) && (length % sizeof(int32_t))) ||
-        ((flag & HEX_PRINTF_Q) && (length % sizeof(int64_t)))) return;
+        ((flag & HEX_PRINTF_W) && (length % sizeof(uint16_t))) ||
+        ((flag & HEX_PRINTF_D) && (length % sizeof(uint32_t))) ||
+        ((flag & HEX_PRINTF_Q) && (length % sizeof(uint64_t)))) return;
 
     timer_chan = 0;
     timer.tv_sec = 0; timer.tv_nsec = 800000;
@@ -119,8 +119,8 @@ hex_printf(
 
             snprintf((char *) hex_buffer, hex_length, "|  %16p | ", tmp_buffer + index);
 
-            for (character = 0; character < line; character += sizeof(int16_t)) {
-                if (sizeof(int16_t) * 3 == character)
+            for (character = 0; character < line; character += sizeof(uint16_t)) {
+                if (sizeof(uint16_t) * 3 == character)
                     snprintf(((char *) hex_buffer + strlen((char *) hex_buffer)),
                              hex_length - strlen((char *) hex_buffer), "%04x  ",
                              *(unsigned short *) (tmp_buffer + index + character));
@@ -130,8 +130,8 @@ hex_printf(
                              *(unsigned short *) (tmp_buffer + index + character));
             }
 
-            for (; character < 0x10; character += sizeof(int16_t)) {
-                if (sizeof(int16_t) * 3 == character)
+            for (; character < 0x10; character += sizeof(uint16_t)) {
+                if (sizeof(uint16_t) * 3 == character)
                     snprintf(((char *) hex_buffer + strlen((char *) hex_buffer)),
                              hex_length - strlen((char *) hex_buffer), "%s",
                              "      ");
@@ -182,8 +182,8 @@ hex_printf(
 
             snprintf((char *) hex_buffer, hex_length, "|  %16p | ", tmp_buffer + index);
 
-            for (character = 0; character < line; character += sizeof(int32_t)) {
-                if (sizeof(int32_t) == character)
+            for (character = 0; character < line; character += sizeof(uint32_t)) {
+                if (sizeof(uint32_t) == character)
                     snprintf(((char *) hex_buffer + strlen((char *) hex_buffer)),
                              hex_length - strlen((char *) hex_buffer), "%08x  ",
                              *(unsigned int *) (tmp_buffer + index + character));
@@ -193,8 +193,8 @@ hex_printf(
                              *(unsigned int *) (tmp_buffer + index + character));
             }
 
-            for (; character < 0x10; character += sizeof(int32_t)) {
-                if (sizeof(int32_t) == character)
+            for (; character < 0x10; character += sizeof(uint32_t)) {
+                if (sizeof(uint32_t) == character)
                     snprintf(((char *) hex_buffer + strlen((char *) hex_buffer)),
                              hex_length - strlen((char *) hex_buffer), "%s",
                              "          ");
@@ -245,20 +245,20 @@ hex_printf(
 
             snprintf((char *) hex_buffer, hex_length, "|  %16p | ", tmp_buffer + index);
 
-            for (character = 0; character < line; character += sizeof(int64_t)) {
+            for (character = 0; character < line; character += sizeof(uint64_t)) {
                 if (!character)
                     snprintf(((char *) hex_buffer + strlen((char *) hex_buffer)),
                              hex_length - strlen((char *) hex_buffer), "%08x`%08x  ",
-                             *(unsigned int *) (tmp_buffer + index + character + sizeof(int32_t) * 1),
-                             *(unsigned int *) (tmp_buffer + index + character + sizeof(int32_t) * 0));
+                             *(unsigned int *) (tmp_buffer + index + character + sizeof(uint32_t) * 1),
+                             *(unsigned int *) (tmp_buffer + index + character + sizeof(uint32_t) * 0));
                 else
                     snprintf(((char *) hex_buffer + strlen((char *) hex_buffer)),
                              hex_length - strlen((char *) hex_buffer), "%08x`%08x ",
-                             *(unsigned int *) (tmp_buffer + index + character + sizeof(int32_t) * 1),
-                             *(unsigned int *) (tmp_buffer + index + character + sizeof(int32_t) * 0));
+                             *(unsigned int *) (tmp_buffer + index + character + sizeof(uint32_t) * 1),
+                             *(unsigned int *) (tmp_buffer + index + character + sizeof(uint32_t) * 0));
             }
 
-            for (; character < 0x10; character += sizeof(int64_t)) {
+            for (; character < 0x10; character += sizeof(uint64_t)) {
                 snprintf(((char *) hex_buffer + strlen((char *) hex_buffer)),
                          hex_length - strlen((char *) hex_buffer), "%s",
                          "                  ");
