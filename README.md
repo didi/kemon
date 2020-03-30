@@ -12,7 +12,7 @@ Endpoint Security
 /* After testing, I found that these Kauth interfaces are not really deleted, and Kemon still works. But I think this release note means that the door to the macOS kernel is closing. (08/28/2019) */
 
 ## What is Kemon?
-An open-source Pre and Post callback-based framework for macOS kernel monitoring [1] [2]. With the power of Kemon, we can easily implement LPC communication monitoring, Mandatory Access Control (MAC) policy filtering, network traffic and kernel driver firewall, etc. In general, from an attacker's perspective, this framework can help achieve more powerful Rootkit. From the perspective of defense, Kemon can help construct more granular monitoring capabilities. I also implemented a kernel fuzzer [3] based on this framework, which helped me find many kernel vulnerabilities, such as CVE-2017-7155, CVE-2017-7163, CVE-2017-13883 [4], CVE-2018-4350, CVE-2018-4396, CVE-2018-4418 [5] and CVE-2019-8807 [6], etc.
+An open-source Pre and Post callback-based framework for macOS kernel monitoring [1] [2]. With the power of Kemon, we can easily implement LPC communication monitoring, Mandatory Access Control (MAC) policy filtering, network traffic and kernel driver firewall, etc. In general, from an attacker's perspective, this framework can help achieve more powerful Rootkit. From the perspective of defense, Kemon can help construct more granular monitoring capabilities. I also implemented a kernel fuzzer [3] based on this framework, which helped me find many kernel vulnerabilities, such as CVE-2017-7155, CVE-2017-7163, CVE-2017-13883 [4], CVE-2018-4350, CVE-2018-4396, CVE-2018-4418 [5], CVE-2019-8807 [6], CVE-2020-3892, CVE-2020-3893, CVE-2020-3905, CVE-2020-3907, CVE-2020-3908 and CVE-2020-3912 [7], etc.
 
 ## Supported Features
 Kemon's features include：
@@ -48,3 +48,4 @@ Kemon is licensed under the Apache License 2.0. See the LICENSE file.
 4. https://support.apple.com/en-us/HT208331
 5. https://support.apple.com/en-us/HT209193
 6. https://support.apple.com/en-us/HT210722
+7. https://support.apple.com/en-us/HT211100
