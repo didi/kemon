@@ -2,17 +2,18 @@
 An Open-Source Pre and Post Callback-Based Framework for macOS Kernel Monitoring.
 
 [ Breaking News - 08/28/2019 ]
-
 macOS Catalina 10.15 Beta 7 Release Notes
 https://developer.apple.com/documentation/macos_release_notes/macos_catalina_10_15_beta_7_release_notes
 
 Endpoint Security
  - The kauth API has been removed. (50419013)
 
-/* After testing, I found that these Kauth interfaces are not really deleted, and Kemon still works. But I think this release note means that the door to the macOS kernel is closing. (08/28/2019) */
+/* After testing, I found that these Kauth interfaces are not really removed, and Kemon still works. But I think this release note means that the door to the macOS kernel is closing. (08/28/2019) */
 
 ## What is Kemon?
-An open-source Pre and Post callback-based framework for macOS kernel monitoring [1] [2]. With the power of Kemon, we can easily implement LPC communication monitoring, Mandatory Access Control (MAC) policy filtering, network traffic and kernel driver firewall, etc. In general, from an attacker's perspective, this framework can help achieve more powerful Rootkit. From the perspective of defense, Kemon can help construct more granular monitoring capabilities. I also implemented a kernel fuzzer [3] based on this framework, which helped me find many kernel vulnerabilities, such as CVE-2017-7155, CVE-2017-7163, CVE-2017-13883 [4], CVE-2018-4350, CVE-2018-4396, CVE-2018-4418 [5], CVE-2019-8807 [6], CVE-2020-3892, CVE-2020-3893, CVE-2020-3905, CVE-2020-3907, CVE-2020-3908 and CVE-2020-3912 [7], etc.
+Kemon is an open-source Pre and Post callback-based framework for macOS kernel monitoring [1]. With the power of Kemon, we can easily implement XPC/IPC communication monitoring [2], Mandatory Access Control (MAC) policy filtering, network traffic and kernel extension firewall, etc. In general, from an attacker's perspective, this framework can help achieve more powerful Rootkit. From the perspective of defense, Kemon can help construct more granular monitoring capabilities.
+
+I also implemented several kernel fuzzers [3] [4] [5] based on this framework, which helped me find many kernel vulnerabilities, such as CVE-2017-7155, CVE-2017-7163, CVE-2017-13883 [6], CVE-2018-4350, CVE-2018-4396, CVE-2018-4418 [7], CVE-2019-8807 [8], CVE-2020-3892, CVE-2020-3893, CVE-2020-3905, CVE-2020-3907, CVE-2020-3908, CVE-2020-3912, CVE-2020-9853 [9], CVE-2020-9831, CVE-2020-9832, CVE-2020-9833, CVE-2020-9834 [10], CVE-2020-9899, CVE-2020-9928 and CVE-2020-9929 [11], etc.
 
 ## Supported Features
 Kemon's features include：
@@ -45,7 +46,11 @@ Kemon is licensed under the Apache License 2.0. See the LICENSE file.
 1. https://www.blackhat.com/us-18/arsenal/schedule/#kemon-an-open-source-pre-and-post-callback-based-framework-for-macos-kernel-monitoring-12085
 2. https://www.blackhat.com/us-19/arsenal/schedule/#ksbox-a-fine-grained-macos-malware-sandbox-15059
 3. https://www.defcon.org/html/defcon-26/dc-26-speakers.html#Wang
-4. https://support.apple.com/en-us/HT208331
-5. https://support.apple.com/en-us/HT209193
-6. https://support.apple.com/en-us/HT210722
-7. https://support.apple.com/en-us/HT211100
+4. https://www.blackhat.com/us-20/briefings/schedule/index.html#dive-into-apple-iofamilyv-20023
+5. https://www.blackhat.com/us-20/arsenal/schedule/index.html#macos-bluetooth-analysis-suite-mbas-19886
+6. https://support.apple.com/en-us/HT208331
+7. https://support.apple.com/en-us/HT209193
+8. https://support.apple.com/en-us/HT210722
+9. https://support.apple.com/en-us/HT211100
+10. https://support.apple.com/en-us/HT211170
+11. https://support.apple.com/en-us/HT211289
