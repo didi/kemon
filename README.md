@@ -14,7 +14,7 @@ Endpoint Security
 ## What is Kemon?
 Kemon is an open-source Pre and Post callback-based framework for macOS kernel monitoring [1]. With the power of Kemon, we can easily implement XPC/IPC communication monitoring [2], Mandatory Access Control (MAC) policy filtering, network traffic and kernel extension firewall, etc. In general, from an attacker's perspective, this framework can help achieve more powerful Rootkit. From the perspective of defense, Kemon can help construct more granular monitoring capabilities.
 
-I also implemented several kernel fuzzers [3] [4] [5] [6] based on this framework, which helped me find many kernel vulnerabilities, such as CVE-2017-7155, CVE-2017-7163, CVE-2017-13883 [7], CVE-2018-4350, CVE-2018-4396, CVE-2018-4418 [8], CVE-2019-8807 [9], CVE-2020-3892, CVE-2020-3893, CVE-2020-3905, CVE-2020-3907, CVE-2020-3908, CVE-2020-3912, CVE-2020-9779, CVE-2020-9853 [10], CVE-2020-9831, CVE-2020-9832, CVE-2020-9833, CVE-2020-9834 [11], CVE-2020-9899, CVE-2020-9928 and CVE-2020-9929 [12], etc.
+I also implemented several kernel fuzzers [3] [4] [5] [6] based on this framework, which helped me find many kernel vulnerabilities, such as CVE-2017-7155, CVE-2017-7163, CVE-2017-13883 [7], CVE-2018-4350, CVE-2018-4396, CVE-2018-4418 [8], CVE-2019-8807 [9], CVE-2020-3892, CVE-2020-3893, CVE-2020-3905, CVE-2020-3907, CVE-2020-3908, CVE-2020-3912, CVE-2020-9779, CVE-2020-9853 [10], CVE-2020-9831, CVE-2020-9832, CVE-2020-9833, CVE-2020-9834 [11], CVE-2020-9899, CVE-2020-9928, CVE-2020-9929 [12] and CVE-2020-10013 [13] [14], etc.
 
 ## Supported Features
 Kemon's features include：
@@ -56,3 +56,5 @@ Kemon is licensed under the Apache License 2.0. See the LICENSE file.
 10. https://support.apple.com/en-us/HT211100
 11. https://support.apple.com/en-us/HT211170
 12. https://support.apple.com/en-us/HT211289
+13. https://support.apple.com/en-us/HT211843
+14. https://support.apple.com/en-us/HT211850
