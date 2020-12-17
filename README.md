@@ -1,8 +1,7 @@
 # Kemon
 An Open-Source Pre and Post Callback-Based Framework for macOS Kernel Monitoring.
 
-[ Breaking News - 08/28/2019 ]
-
+[ Breaking News - 08/28/2019 ]  
 macOS Catalina 10.15 Beta 7 Release Notes
 https://developer.apple.com/documentation/macos_release_notes/macos_catalina_10_15_beta_7_release_notes
 
