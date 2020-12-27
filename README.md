@@ -18,11 +18,11 @@ I also implemented several kernel fuzzers [3] [6] based on this framework, which
 1. Graphics related kernel extensions:  
 CVE-2017-7155, CVE-2017-7163, CVE-2017-13883 [7], CVE-2018-4350, CVE-2018-4396, CVE-2018-4418 [8], CVE-2019-8807 [9], etc.
 
-2. Bluetooth Host Controller Interface (HCI) [5]:  
-CVE-2020-3892, CVE-2020-3893, CVE-2020-3905, CVE-2020-3907, CVE-2020-3908, CVE-2020-3912, CVE-2020-9779, CVE-2020-9853 [10], CVE-2020-9831 [11], CVE-2020-9928, CVE-2020-9929 [12], etc.
-
-3. Wi-Fi IO80211FamilyV1/V2 [4]:  
+2. Wi-Fi IO80211FamilyV1/V2 [4]:  
 CVE-2020-9832, CVE-2020-9833, CVE-2020-9834 [11], CVE-2020-9899 [12], CVE-2020-10013 [13] [14], etc.
+
+3. Bluetooth Host Controller Interface (HCI) [5]:  
+CVE-2020-3892, CVE-2020-3893, CVE-2020-3905, CVE-2020-3907, CVE-2020-3908, CVE-2020-3912, CVE-2020-9779, CVE-2020-9853 [10], CVE-2020-9831 [11], CVE-2020-9928, CVE-2020-9929 [12], etc.
 
 4. Kernel memory mapping mechanism:  
 CVE-2020-27914, CVE-2020-27915 [15] [16], etc.
