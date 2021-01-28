@@ -16,16 +16,16 @@ Kemon is an open source Pre and Post callback-based framework for macOS kernel m
 I also implemented several kernel fuzzers [3] [6] based on this framework, which helped me find many kernel vulnerabilities, such as:
 
 1. Graphics related kernel extensions:  
-CVE-2017-7155, CVE-2017-7163, CVE-2017-13883 [7], CVE-2018-4350, CVE-2018-4396, CVE-2018-4418 [8], CVE-2019-8807 [9], etc.
+CVE-2017-7155, CVE-2017-7163, CVE-2017-13883 [8], CVE-2018-4350, CVE-2018-4396, CVE-2018-4418 [9], CVE-2019-8807 [10], etc.
 
 2. Wi-Fi IO80211FamilyV1/V2 [4]:  
-CVE-2020-9832, CVE-2020-9833, CVE-2020-9834 [11], CVE-2020-9899 [12], CVE-2020-10013 [13] [14], etc.
+CVE-2020-9832, CVE-2020-9833, CVE-2020-9834 [12], CVE-2020-9899 [13], CVE-2020-10013 [14] [15], etc.
 
 3. Bluetooth Host Controller Interface (HCI) [5]:  
-CVE-2020-3892, CVE-2020-3893, CVE-2020-3905, CVE-2020-3907, CVE-2020-3908, CVE-2020-3912, CVE-2020-9779, CVE-2020-9853 [10], CVE-2020-9831 [11], CVE-2020-9928, CVE-2020-9929 [12], etc.
+CVE-2020-3892, CVE-2020-3893, CVE-2020-3905, CVE-2020-3907, CVE-2020-3908, CVE-2020-3912, CVE-2020-9779, CVE-2020-9853 [11], CVE-2020-9831 [12], CVE-2020-9928, CVE-2020-9929 [13], etc.
 
-4. Kernel memory mapping mechanism:  
-CVE-2020-27914, CVE-2020-27915 [15] [16], etc.
+4. Kernel memory mapping mechanism [7]:  
+CVE-2020-27914, CVE-2020-27915 [16] [17], etc.
 
 ## Supported Features
 Kemon's features include：
@@ -61,13 +61,14 @@ Kemon is licensed under the Apache License 2.0. See the LICENSE file.
 4. https://www.blackhat.com/us-20/briefings/schedule/index.html#dive-into-apple-iofamilyv-20023
 5. https://www.blackhat.com/eu-20/briefings/schedule/index.html#please-make-a-dentist-appointment-asap-attacking-iobluetoothfamily-hci-and-vendor-specific-commands-21155
 6. https://www.blackhat.com/us-20/arsenal/schedule/index.html#macos-bluetooth-analysis-suite-mbas-19886
-7. https://support.apple.com/en-us/HT208331
-8. https://support.apple.com/en-us/HT209193
-9. https://support.apple.com/en-us/HT210722
-10. https://support.apple.com/en-us/HT211100
-11. https://support.apple.com/en-us/HT211170
-12. https://support.apple.com/en-us/HT211289
-13. https://support.apple.com/en-us/HT211843
-14. https://support.apple.com/en-us/HT211850
-15. https://support.apple.com/en-us/HT211931
-16. https://support.apple.com/en-us/HT212011
+7. https://www.blackhat.com/asia-21/briefings/schedule/index.html#racing-the-dark-a-new-tocttou-story-from-apples-core-22214
+8. https://support.apple.com/en-us/HT208331
+9. https://support.apple.com/en-us/HT209193
+10. https://support.apple.com/en-us/HT210722
+11. https://support.apple.com/en-us/HT211100
+12. https://support.apple.com/en-us/HT211170
+13. https://support.apple.com/en-us/HT211289
+14. https://support.apple.com/en-us/HT211843
+15. https://support.apple.com/en-us/HT211850
+16. https://support.apple.com/en-us/HT211931
+17. https://support.apple.com/en-us/HT212011
