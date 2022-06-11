@@ -78,4 +78,3 @@ Kemon is licensed under the Apache License 2.0. See the LICENSE file.
 21. https://support.apple.com/en-us/HT213183
 22. https://support.apple.com/en-us/HT213257
 23. https://support.apple.com/en-us/HT213258
-24. 
