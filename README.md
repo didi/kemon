@@ -19,7 +19,7 @@ I also implemented several kernel fuzzers [3] [6] based on this framework, which
 CVE-2017-7155, CVE-2017-7163, CVE-2017-13883 [9], CVE-2018-4350, CVE-2018-4396, CVE-2018-4418 [10], CVE-2019-8807 [11], CVE-2022-22631 [21], etc.
 
 2. Wi-Fi IO80211FamilyV1/V2 [4] [8]:  
-CVE-2020-9832, CVE-2020-9833, CVE-2020-9834 [13], CVE-2020-9899 [14], CVE-2020-10013 [15] [16] [17], CVE-2022-26761 [22], CVE-2022-26762 [23], etc.
+CVE-2020-9832, CVE-2020-9833, CVE-2020-9834 [13], CVE-2020-9899 [14], CVE-2020-10013 [15] [16] [17], CVE-2022-26761 [22], CVE-2022-26762 [23], CVE-2022-32837 [24] [25], CVE-2022-32847 [26], etc.
 
 3. Bluetooth Host Controller Interface (HCI) [5]:  
 CVE-2020-3892, CVE-2020-3893, CVE-2020-3905, CVE-2020-3907, CVE-2020-3908, CVE-2020-3912, CVE-2020-9779, CVE-2020-9853 [12], CVE-2020-9831 [13], CVE-2020-9928, CVE-2020-9929 [14], etc.
@@ -78,3 +78,6 @@ Kemon is licensed under the Apache License 2.0. See the LICENSE file.
 21. https://support.apple.com/en-us/HT213183
 22. https://support.apple.com/en-us/HT213257
 23. https://support.apple.com/en-us/HT213258
+24. https://support.apple.com/en-us/HT213346
+25. https://support.apple.com/en-us/HT213345
+26. https://support.apple.com/en-us/HT213344
