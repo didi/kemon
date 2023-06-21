@@ -16,7 +16,7 @@ Kemon is an open source Pre and Post callback-based framework [1] for macOS kern
 I also implemented several kernel fuzzers [4] [7] based on this framework, which helped me find many kernel vulnerabilities, such as:
 
 1. Graphics related kernel extensions:  
-CVE-2017-7155, CVE-2017-7163, CVE-2017-13883 [10], CVE-2018-4350, CVE-2018-4396, CVE-2018-4418 [11], CVE-2019-8807 [12], CVE-2022-22631 [22], etc.
+CVE-2017-7155, CVE-2017-7163, CVE-2017-13883 [10], CVE-2018-4350, CVE-2018-4396, CVE-2018-4418 [11], CVE-2019-8807 [12], CVE-2022-22631, CVE-2022-22661, CVE-2022-46706 [22], etc.
 
 2. Wi-Fi IO80211FamilyV1/V2 [5] [9]:  
 CVE-2020-9832, CVE-2020-9833, CVE-2020-9834 [14], CVE-2020-9899 [15], CVE-2020-10013 [16] [17] [18], CVE-2022-26761 [23], CVE-2022-26762 [24], CVE-2022-32837, CVE-2022-32847, CVE-2022-32860 [25] [26] [27], CVE-2022-32925, CVE-2022-46709 [28] [29], etc.
