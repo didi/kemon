@@ -15,17 +15,20 @@ Kemon is an open source Pre and Post callback-based framework [1] for macOS kern
 
 I also implemented several kernel fuzzers [4] [7] based on this framework, which helped me find many kernel vulnerabilities, such as:
 
-1. Graphics related kernel extensions:  
-CVE-2017-7155, CVE-2017-7163, CVE-2017-13883 [10], CVE-2018-4350, CVE-2018-4396, CVE-2018-4418 [11], CVE-2019-8807 [12], CVE-2022-22631, CVE-2022-22661, CVE-2022-46706 [22], etc.
+1. Apple Silicon AGX-based GPU, IOMobileFrameBuffer and Display Co-processor (DCP) [10]:
+CVE-2024-40854, CVE-2024-44197 [33], CVE-2024-44199 [34], CVE-2025-24111, CVE-2025-24257, CVE-2025-24273 [35], etc.
 
-2. Wi-Fi IO80211FamilyV1/V2 [5] [9]:  
-CVE-2020-9832, CVE-2020-9833, CVE-2020-9834 [14], CVE-2020-9899 [15], CVE-2020-10013 [16] [17] [18], CVE-2022-26761 [23], CVE-2022-26762 [24], CVE-2022-32837, CVE-2022-32847, CVE-2022-32860 [25] [26] [27], CVE-2022-32925, CVE-2022-46709 [28] [29], CVE-2023-38610 [30] [31], etc.
+3. Apple's AMD and Intel-based GPU:
+CVE-2017-7155, CVE-2017-7163, CVE-2017-13883 [11], CVE-2018-4350, CVE-2018-4396, CVE-2018-4418 [12], CVE-2019-8807 [13], CVE-2022-22631, CVE-2022-22661, CVE-2022-46706 [23], etc.
 
-3. Bluetooth Host Controller Interface (HCI) [6]:  
-CVE-2020-3892, CVE-2020-3893, CVE-2020-3905, CVE-2020-3907, CVE-2020-3908, CVE-2020-3912, CVE-2020-9779, CVE-2020-9853 [13], CVE-2020-9831 [14], CVE-2020-9928, CVE-2020-9929 [15], etc.
+4. Wi-Fi IO80211FamilyV1/V2 [5] [9]:  
+CVE-2020-9832, CVE-2020-9833, CVE-2020-9834 [15], CVE-2020-9899 [16], CVE-2020-10013 [17] [18] [19], CVE-2022-26761 [24], CVE-2022-26762 [25], CVE-2022-32837, CVE-2022-32847, CVE-2022-32860 [26] [27] [28], CVE-2022-32925, CVE-2022-46709 [29] [30], CVE-2023-38610 [31] [32], etc.
 
-4. Kernel memory mapping mechanism [8]:  
-CVE-2020-27914, CVE-2020-27915, CVE-2020-27936 [19] [20], CVE-2021-30678 [21], etc.
+5. Bluetooth Host Controller Interface (HCI) [6]:  
+CVE-2020-3892, CVE-2020-3893, CVE-2020-3905, CVE-2020-3907, CVE-2020-3908, CVE-2020-3912, CVE-2020-9779, CVE-2020-9853 [14], CVE-2020-9831 [15], CVE-2020-9928, CVE-2020-9929 [16], etc.
+
+6. Kernel memory mapping mechanism [8]:  
+CVE-2020-27914, CVE-2020-27915, CVE-2020-27936 [20] [21], CVE-2021-30678 [22], etc.
 
 ## Supported Features
 Kemon's features include：
@@ -64,25 +67,29 @@ Kemon is licensed under the Apache License 2.0. See the LICENSE file.
 7. https://www.blackhat.com/us-20/arsenal/schedule/index.html#macos-bluetooth-analysis-suite-mbas-19886
 8. https://www.blackhat.com/asia-21/briefings/schedule/index.html#racing-the-dark-a-new-tocttou-story-from-apples-core-22214
 9. https://www.blackhat.com/us-22/briefings/schedule/#dive-into-apple-iofamily-vol--27728
-10. https://support.apple.com/en-us/HT208331
-11. https://support.apple.com/en-us/HT209193
-12. https://support.apple.com/en-us/HT210722
-13. https://support.apple.com/en-us/HT211100
-14. https://support.apple.com/en-us/HT211170
-15. https://support.apple.com/en-us/HT211289
-16. https://support.apple.com/en-us/HT211843
-17. https://support.apple.com/en-us/HT211849
-18. https://support.apple.com/en-us/HT211850
-19. https://support.apple.com/en-us/HT211931
-20. https://support.apple.com/en-us/HT212011
-21. https://support.apple.com/en-us/HT212529
-22. https://support.apple.com/en-us/HT213183
-23. https://support.apple.com/en-us/HT213257
-24. https://support.apple.com/en-us/HT213258
-25. https://support.apple.com/en-us/HT213346
-26. https://support.apple.com/en-us/HT213345
-27. https://support.apple.com/en-us/HT213344
-28. https://support.apple.com/en-us/HT213446
-29. https://support.apple.com/en-us/HT213486
-30. https://support.apple.com/en-us/HT213938
-31. https://support.apple.com/en-us/HT213940
+10. https://www.blackhat.com/us-25/briefings/schedule/index.html#dead-pixel-detected---a-security-assessment-of-apples-graphics-subsystem-45392
+11. https://support.apple.com/en-us/HT208331
+12. https://support.apple.com/en-us/HT209193
+13. https://support.apple.com/en-us/HT210722
+14. https://support.apple.com/en-us/HT211100
+15. https://support.apple.com/en-us/HT211170
+16. https://support.apple.com/en-us/HT211289
+17. https://support.apple.com/en-us/HT211843
+18. https://support.apple.com/en-us/HT211849
+19. https://support.apple.com/en-us/HT211850
+20. https://support.apple.com/en-us/HT211931
+21. https://support.apple.com/en-us/HT212011
+22. https://support.apple.com/en-us/HT212529
+23. https://support.apple.com/en-us/HT213183
+24. https://support.apple.com/en-us/HT213257
+25. https://support.apple.com/en-us/HT213258
+26. https://support.apple.com/en-us/HT213346
+27. https://support.apple.com/en-us/HT213345
+28. https://support.apple.com/en-us/HT213344
+29. https://support.apple.com/en-us/HT213446
+30. https://support.apple.com/en-us/HT213486
+31. https://support.apple.com/en-us/HT213938
+32. https://support.apple.com/en-us/HT213940
+33. https://support.apple.com/en-us/121564
+34. https://support.apple.com/en-us/120911
+35. https://support.apple.com/en-us/122373
