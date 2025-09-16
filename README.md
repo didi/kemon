@@ -16,7 +16,7 @@ Kemon is an open source Pre and Post callback-based framework [1] for macOS kern
 I also implemented several kernel fuzzers [4] [7] based on this framework, which helped me find many kernel vulnerabilities, such as:
 
 1. Apple Silicon AGX-based GPU, IOMobileFrameBuffer and Display Co-processor (DCP) [10]:  
-CVE-2024-40854, CVE-2024-44197 [33], CVE-2024-44199 [34], CVE-2025-24106 [35], CVE-2025-24111 [38], CVE-2025-24257 [36], CVE-2025-24273 [37], etc.
+CVE-2024-40854, CVE-2024-44197 [33], CVE-2024-44199 [34], CVE-2025-24106 [35], CVE-2025-24111 [38], CVE-2025-24257 [36], CVE-2025-24273 [37], CVE-2025-43326 [39] [40], etc.
 
 3. Apple's AMD and Intel-based GPU:  
 CVE-2017-7155, CVE-2017-7163, CVE-2017-13883 [11], CVE-2018-4350, CVE-2018-4396, CVE-2018-4418 [12], CVE-2019-8807 [13], CVE-2022-22631, CVE-2022-22661, CVE-2022-46706 [23], etc.
@@ -96,3 +96,5 @@ Kemon is licensed under the Apache License 2.0. See the LICENSE file.
 36. https://support.apple.com/en-us/122371
 37. https://support.apple.com/en-us/122373
 38. https://support.apple.com/en-us/122066
+39. https://support.apple.com/en-us/125111
+40. https://support.apple.com/en-us/125110
